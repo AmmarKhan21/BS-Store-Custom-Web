@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Product, CartItem, Order, Coupon } from './types';
 import { CATEGORIES } from './mockData';
+import { customerFetch, getCustomerProfile } from './lib/customerAuth';
+import { useCurrency } from './context/CurrencyContext';
 import BannerHero from './components/BannerHero';
 import ProductCard from './components/ProductCard';
 import ProductModal from './components/ProductModal';
@@ -16,10 +19,14 @@ import {
   Check,
   SlidersHorizontal,
   X,
-  RotateCcw
+  RotateCcw,
+  User,
+  Globe
 } from 'lucide-react';
 
 export default function StoreApp() {
+  const { currency, setCurrency, format, country } = useCurrency();
+  const [customerName, setCustomerName] = useState<string | null>(null);
   // --- REAL LIVE DATABASE STATE ENGINE ---
   const [products, setProducts] = useState<Product[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
@@ -43,17 +50,21 @@ export default function StoreApp() {
   const loadDatabaseAssets = async () => {
     setIsLoading(true);
     try {
-      const [prodRes, coupRes] = await Promise.all([
+      const [prodRes, coupRes, catRes] = await Promise.all([
         fetch("/api/products"),
-        fetch("/api/coupons")
+        fetch("/api/coupons"),
+        fetch("/api/categories")
       ]);
 
       const prods = await prodRes.json();
       const coups = await coupRes.json();
+      const cats = await catRes.json();
       if (Array.isArray(prods)) {
         setProducts(prods);
         // Dynamically extract and register any custom categories from database products list
-        const derivedCategories = Array.from(new Set(prods.map((p: any) => p.category))) as string[];
+        const derivedCategories = Array.isArray(cats) && cats.length > 0
+          ? cats.map((c: { name: string }) => c.name)
+          : Array.from(new Set(prods.map((p: any) => p.category))) as string[];
         if (derivedCategories.length > 0) {
           setCategories(derivedCategories);
         }
@@ -78,6 +89,7 @@ export default function StoreApp() {
 
   useEffect(() => {
     loadDatabaseAssets();
+    getCustomerProfile().then((p) => setCustomerName(p?.name || null));
   }, []);
 
   const [activeCategory, setActiveCategory] = useState<string>('All');
@@ -211,11 +223,17 @@ export default function StoreApp() {
   const handleSubmitOrder = async (
     newOrder: Order,
     couponCode?: string
-  ): Promise<{ success: boolean; orderId?: string; error?: string }> => {
+  ): Promise<{
+    success: boolean;
+    orderId?: string;
+    error?: string;
+    requiresPayment?: boolean;
+    checkoutUrl?: string;
+    formFields?: Record<string, string>;
+  }> => {
     try {
-      const response = await fetch("/api/orders", {
+      const response = await customerFetch("/api/orders", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           customerName: newOrder.customerName,
           customerEmail: newOrder.customerEmail,
@@ -227,6 +245,7 @@ export default function StoreApp() {
           subtotal: newOrder.subtotal,
           discount: newOrder.discount,
           total: newOrder.total,
+          currency: newOrder.currency || currency,
           paymentMethod: newOrder.paymentMethod,
           notes: newOrder.notes,
           couponCode
@@ -235,20 +254,27 @@ export default function StoreApp() {
 
       const data = await response.json();
       if (data.success) {
-        triggerToast(`Order ${data.orderId} placed successfully! Thank you.`);
+        if (!data.requiresPayment) {
+          triggerToast(`Order ${data.orderId} placed successfully! Thank you.`);
+        }
 
         const prodRes = await fetch("/api/products");
         setProducts(await prodRes.json());
-
         setCart([]);
         setAppliedCoupon(null);
 
-        return { success: true, orderId: data.orderId };
+        return {
+          success: true,
+          orderId: data.orderId,
+          requiresPayment: data.requiresPayment,
+          checkoutUrl: data.checkoutUrl,
+          formFields: data.formFields,
+        };
       }
 
       return { success: false, error: data.error || "Failed to place order." };
     } catch (e) {
-      console.error("Order database insertion error:", e);
+      console.error("Order error:", e);
       return { success: false, error: "Database connection error. Please try again." };
     }
   };
@@ -337,21 +363,40 @@ export default function StoreApp() {
         {/* Cart Trigger Badge */}
         <div className="flex items-center gap-3.5">
           <button
+            onClick={() => setCurrency(currency === 'PKR' ? 'USD' : 'PKR')}
+            className="hidden sm:flex items-center gap-1.5 text-[10px] font-bold text-slate-600 bg-slate-50 border border-slate-200 px-2.5 py-1.5 rounded-lg cursor-pointer"
+            title="Switch currency"
+          >
+            <Globe size={12} />
+            {currency} {country === 'PK' ? '🇵🇰' : '🌐'}
+          </button>
+
+          {customerName ? (
+            <Link to="/account" className="text-xs font-bold text-indigo-700 hover:text-indigo-900 flex items-center gap-1">
+              <User size={14} /> {customerName.split(' ')[0]}
+            </Link>
+          ) : (
+            <Link to="/login" className="text-xs font-bold text-slate-600 hover:text-indigo-700 hidden sm:block">
+              Sign In
+            </Link>
+          )}
+
+          <button
               onClick={() => setIsCartOpen(true)}
               className="p-2.5 bg-slate-50 hover:bg-slate-100 text-slate-800 hover:text-indigo-700 rounded-xl border border-slate-200 relative transition-all cursor-pointer flex items-center gap-2"
               title="Open Cart"
               aria-label="Shopping Cart"
             >
               <ShoppingBag size={16} />
-              <span className="hidden md:inline text-xs font-bold font-sans uppercase tracking-wider text-slate-700">Basket</span>
+              <span className="hidden md:inline text-xs font-bold font-sans uppercase tracking-wider text-slate-700"></span>
               <span className="absolute -top-1.5 -right-1.5 bg-indigo-600 text-white font-bold text-[10px] px-1.5 py-0.5 rounded-full ring-2 ring-white">
                 {cart.reduce((total, item) => total + item.quantity, 0)}
               </span>
             </button>
 
-          <div className="text-[11px] font-semibold text-slate-500 bg-slate-100 py-1.5 px-3 rounded-lg border border-slate-200 hidden lg:block">
+          {/* <div className="text-[11px] font-semibold text-slate-500 bg-slate-100 py-1.5 px-3 rounded-lg border border-slate-200 hidden lg:block">
             Support: <strong>COD & Online pay SSL</strong>
-          </div>
+          </div> */}
         </div>
       </header>
 

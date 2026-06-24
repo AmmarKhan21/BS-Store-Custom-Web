@@ -26,15 +26,62 @@ import {
   verifySessionToken,
   extractToken
 } from "./auth";
+import {
+  createCustomerSessionToken,
+  verifyCustomerSessionToken
+} from "./customerAuth";
+import {
+  seedCategoriesIfEmpty,
+  getAllCategories,
+  addCategory,
+  updateCategory,
+  deleteCategory,
+  createCustomer,
+  getCustomerByEmail,
+  getCustomerById,
+  verifyCustomerPassword,
+  markCustomerVerified,
+  saveOtp,
+  verifyOtp,
+  getCustomerOrders,
+  getOrderById,
+  confirmOrderPayment
+} from "./customerDb";
+import {
+  sendOtpEmail,
+  sendOrderConfirmationEmail,
+  sendAdminNewOrderEmail
+} from "./emailService";
+import {
+  detectCurrencyFromCountry,
+  convertPrice,
+  getExchangeRate,
+  toPaymentAmount,
+  getDeliveryCharge
+} from "./currency";
+import { createPayFastCheckout, verifyPayFastCallback } from "./payments/payfast";
+import { createJazzCashCheckout, verifyJazzCashCallback } from "./payments/jazzcash";
 
 const app = express();
 const PORT = 3000;
 
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Initialize SQL databases on server startup (Prisma or SQLite Fallback)
 initializeDatabase();
+seedCategoriesIfEmpty();
+
+const requireCustomer = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const token = extractToken(req.headers.authorization, req.headers["x-customer-token"]);
+  const result = verifyCustomerSessionToken(token);
+  if (!result.valid || !result.customerId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  (req as any).customerId = result.customerId;
+  next();
+};
 
 const requireAdmin = (req: express.Request, res: express.Response, next: express.NextFunction) => {
   const token = extractToken(
@@ -64,6 +111,238 @@ app.get("/api/admin/me", requireAdmin, (_req, res) => {
 
 app.post("/api/admin/logout", (_req, res) => {
   res.json({ success: true });
+});
+
+/* --- REGION & CURRENCY --- */
+
+app.get("/api/region", (req, res) => {
+  const country =
+    (req.headers["cf-ipcountry"] as string) ||
+    (req.query.country as string) ||
+    "US";
+  const currency = detectCurrencyFromCountry(country);
+  res.json({
+    country: country.toUpperCase(),
+    currency,
+    exchangeRate: getExchangeRate(),
+  });
+});
+
+/* --- CATEGORIES --- */
+
+app.get("/api/categories", async (_req, res) => {
+  try {
+    res.json(await getAllCategories());
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/categories", requireAdmin, async (req, res) => {
+  try {
+    const cat = await addCategory(req.body.name, req.body.image);
+    res.status(201).json({ success: true, category: cat });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.put("/api/categories/:id", requireAdmin, async (req, res) => {
+  try {
+    const cat = await updateCategory(req.params.id, req.body.name);
+    res.json({ success: true, category: cat });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.delete("/api/categories/:id", requireAdmin, async (req, res) => {
+  try {
+    await deleteCategory(req.params.id);
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+/* --- CUSTOMER AUTH --- */
+
+app.post("/api/auth/register", async (req, res) => {
+  try {
+    const { email, password, name, phone } = req.body ?? {};
+    if (!email || !password || !name) {
+      return res.status(400).json({ success: false, error: "Name, email and password are required" });
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ success: false, error: "Password must be at least 6 characters" });
+    }
+
+    await createCustomer(email, password, name, phone);
+    const code = await saveOtp(email, "register");
+    await sendOtpEmail(email, code, "register");
+
+    res.json({ success: true, message: "Account created. Check your email for verification code." });
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+app.post("/api/auth/verify-otp", async (req, res) => {
+  try {
+    const { email, code, purpose } = req.body ?? {};
+    const valid = await verifyOtp(email, code, purpose || "register");
+    if (!valid) {
+      return res.status(400).json({ success: false, error: "Invalid or expired code" });
+    }
+
+    if ((purpose || "register") === "register") {
+      await markCustomerVerified(email);
+    }
+
+    const customer = await getCustomerByEmail(email);
+    if (!customer) {
+      return res.status(404).json({ success: false, error: "Account not found" });
+    }
+
+    const token = createCustomerSessionToken(customer.id);
+    res.json({
+      success: true,
+      token,
+      customer: { id: customer.id, email: customer.email, name: customer.name, phone: customer.phone },
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post("/api/auth/resend-otp", async (req, res) => {
+  try {
+    const { email, purpose } = req.body ?? {};
+    const customer = await getCustomerByEmail(email);
+    if (!customer) {
+      return res.status(404).json({ success: false, error: "Account not found" });
+    }
+    const code = await saveOtp(email, purpose || "register");
+    await sendOtpEmail(email, code, purpose || "register");
+    res.json({ success: true, message: "Verification code sent" });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post("/api/auth/login", async (req, res) => {
+  try {
+    const { email, password } = req.body ?? {};
+    const customer = await verifyCustomerPassword(email, password);
+    if (!customer) {
+      return res.status(401).json({ success: false, error: "Invalid email or password" });
+    }
+    if (!customer.isVerified) {
+      const code = await saveOtp(email, "login");
+      await sendOtpEmail(email, code, "login");
+      return res.json({ success: false, requiresOtp: true, message: "Please verify with the code sent to your email" });
+    }
+
+    const token = createCustomerSessionToken(customer.id);
+    res.json({
+      success: true,
+      token,
+      customer: { id: customer.id, email: customer.email, name: customer.name, phone: customer.phone },
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get("/api/auth/me", requireCustomer, async (req, res) => {
+  try {
+    const customer = await getCustomerById((req as any).customerId);
+    if (!customer) return res.status(404).json({ error: "Not found" });
+    res.json({
+      id: customer.id,
+      email: customer.email,
+      name: customer.name,
+      phone: customer.phone,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/api/account/orders", requireCustomer, async (req, res) => {
+  try {
+    const orders = await getCustomerOrders((req as any).customerId);
+    res.json(orders);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/* --- PAYMENTS --- */
+
+app.post("/api/payments/payfast/callback", async (req, res) => {
+  try {
+    const body = req.body ?? {};
+    const orderId = body.basket_id || body.BASKET_ID || req.query.orderId;
+    if (verifyPayFastCallback(body) && orderId) {
+      await confirmOrderPayment(String(orderId), body.transaction_id || body.TXN_ID);
+      const order = await getOrderById(String(orderId));
+      if (order) {
+        await sendOrderConfirmationEmail(order);
+        await sendAdminNewOrderEmail(order);
+      }
+    }
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/payments/jazzcash/callback", async (req, res) => {
+  try {
+    const body = { ...req.body, ...req.query } as Record<string, string>;
+    const orderId = body.pp_BillReference;
+    if (verifyJazzCashCallback(body) && orderId) {
+      await confirmOrderPayment(orderId, body.pp_TxnRefNo);
+      const order = await getOrderById(orderId);
+      if (order) {
+        await sendOrderConfirmationEmail(order);
+        await sendAdminNewOrderEmail(order);
+      }
+      return res.redirect(`${process.env.APP_URL || "http://localhost:3000"}/order/success?orderId=${orderId}&gateway=jazzcash`);
+    }
+    return res.redirect(`${process.env.APP_URL || "http://localhost:3000"}/order/failed?orderId=${orderId || ""}&gateway=jazzcash`);
+  } catch {
+    return res.redirect(`${process.env.APP_URL || "http://localhost:3000"}/order/failed?gateway=jazzcash`);
+  }
+});
+
+app.get("/api/orders/:id", async (req, res) => {
+  try {
+    const order = await getOrderById(req.params.id);
+    if (!order) return res.status(404).json({ error: "Order not found" });
+    res.json(order);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/orders/:id/confirm-payment", async (req, res) => {
+  try {
+    const order = await getOrderById(req.params.id);
+    if (!order) return res.status(404).json({ error: "Order not found" });
+    if (order.paymentStatus !== "Paid") {
+      await confirmOrderPayment(req.params.id, req.body?.paymentRef || "confirmed");
+      const updated = await getOrderById(req.params.id);
+      if (updated) {
+        await sendOrderConfirmationEmail(updated);
+        await sendAdminNewOrderEmail(updated);
+      }
+    }
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 /* --- DATABASE BACKEND ENDPOINTS --- */
@@ -144,8 +423,64 @@ app.post("/api/products/:id/reviews", async (req, res) => {
 // PLACE NEW ORDER - WITH STOCK ADJUSTMENT RELATIONS
 app.post("/api/orders", async (req, res) => {
   try {
-    const result = await addOrder(req.body);
-    res.status(201).json({ success: true, orderId: result.id, total: result.total });
+    const body = req.body ?? {};
+    const customerToken = extractToken(req.headers.authorization, undefined);
+    const customerSession = verifyCustomerSessionToken(customerToken);
+
+    const result = await addOrder({
+      ...body,
+      customerId: customerSession.valid ? customerSession.customerId : body.customerId || null,
+    });
+
+    const order = await getOrderById(result.id);
+    const isOnline = body.paymentMethod === "PAYFAST" || body.paymentMethod === "JAZZCASH";
+
+    if (isOnline && order) {
+      const paymentAmount = toPaymentAmount(order.total, order.currency || "PKR");
+      const checkoutParams = {
+        orderId: order.id,
+        amount: paymentAmount,
+        currency: order.currency || "PKR",
+        customerEmail: order.customerEmail,
+        customerPhone: order.customerPhone,
+        description: `Order ${order.id}`,
+      };
+
+      if (body.paymentMethod === "PAYFAST") {
+        const checkout = await createPayFastCheckout(checkoutParams);
+        return res.status(201).json({
+          success: true,
+          orderId: result.id,
+          total: result.total,
+          currency: result.currency,
+          requiresPayment: true,
+          paymentMethod: "PAYFAST",
+          checkoutUrl: checkout.checkoutUrl,
+          formFields: checkout.formFields,
+        });
+      }
+
+      if (body.paymentMethod === "JAZZCASH") {
+        const checkout = createJazzCashCheckout(checkoutParams);
+        return res.status(201).json({
+          success: true,
+          orderId: result.id,
+          total: result.total,
+          currency: result.currency,
+          requiresPayment: true,
+          paymentMethod: "JAZZCASH",
+          checkoutUrl: checkout.checkoutUrl,
+          formFields: checkout.formFields,
+        });
+      }
+    }
+
+    if (order) {
+      await sendOrderConfirmationEmail(order);
+      await sendAdminNewOrderEmail(order);
+    }
+
+    res.status(201).json({ success: true, orderId: result.id, total: result.total, currency: result.currency });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

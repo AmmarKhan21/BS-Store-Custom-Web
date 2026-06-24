@@ -209,7 +209,7 @@ export const INITIAL_ORDERS: Order[] = [
     subtotal: 128,
     discount: 15,
     total: 113,
-    paymentMethod: 'CARD',
+    paymentMethod: 'PAYFAST',
     paymentStatus: 'Paid',
     status: 'Shipped',
     date: '2026-06-20T10:15:00Z'

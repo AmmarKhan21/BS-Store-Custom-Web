@@ -1,5 +1,7 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Product } from '../types';
+import { useCurrency } from '../context/CurrencyContext';
 import { Star, ShoppingCart, Eye, Sparkles } from 'lucide-react';
 
 interface ProductCardProps {
@@ -10,6 +12,7 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, onOpenQuickView, onAddToCartDirectly }: ProductCardProps) {
+  const { format } = useCurrency();
   // Calculate discount percentage if original price exists
   const discountPercent = product.originalPrice 
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
@@ -94,10 +97,9 @@ export default function ProductCard({ product, onOpenQuickView, onAddToCartDirec
           </span>
           {/* Main Name */}
           <h3 
-            onClick={() => onOpenQuickView(product)}
-            className="font-display font-semibold text-slate-900 group-hover:text-indigo-600 text-[13px] sm:text-sm md:text-base leading-snug line-clamp-2 cursor-pointer mb-1.5 transition-colors"
+            className="font-display font-semibold text-slate-900 group-hover:text-indigo-600 text-[13px] sm:text-sm md:text-base leading-snug line-clamp-2 mb-1.5 transition-colors"
           >
-            {product.name}
+            <Link to={`/product/${product.id}`}>{product.name}</Link>
           </h3>
 
           {/* Rating system */}
@@ -122,11 +124,11 @@ export default function ProductCard({ product, onOpenQuickView, onAddToCartDirec
         <div className="border-t border-slate-150 pt-2.5 flex flex-row items-center justify-between gap-2">
           <div className="flex items-baseline gap-1 flex-wrap">
             <span className="text-sm sm:text-base font-bold text-slate-900">
-              ${product.price ? product.price.toFixed(2) : '0.00'}
+              {format(product.price)}
             </span>
             {product.originalPrice && (
               <span className="text-[10px] sm:text-xs text-slate-400 line-through">
-                ${product.originalPrice.toFixed(2)}
+                {format(product.originalPrice)}
               </span>
             )}
           </div>

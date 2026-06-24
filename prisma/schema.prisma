@@ -15,12 +15,12 @@ model Product {
   price         Float
   originalPrice Float?
   category      String
-  images        String?  // JSON stringified array of image URLs
-  sizes         String?  // JSON stringified array of sizes
-  colors        String?  // JSON stringified array of hex colors
+  images        String?
+  sizes         String?
+  colors        String?
   rating        Float    @default(5.0)
   stock         Int      @default(10)
-  isFeatured    Int      @default(0) // 0 for false, 1 for true
+  isFeatured    Int      @default(0)
   dateAdded     String?
   reviews       Review[]
 
@@ -39,30 +39,69 @@ model Review {
   @@map("reviews")
 }
 
+model Customer {
+  id            String   @id
+  email         String   @unique
+  passwordHash  String
+  name          String
+  phone         String?
+  isVerified    Int      @default(0)
+  createdAt     String
+  orders        Order[]
+
+  @@map("customers")
+}
+
+model Category {
+  id        String @id
+  name      String @unique
+  slug      String @unique
+  image     String?
+  sortOrder Int    @default(0)
+  isActive  Int    @default(1)
+
+  @@map("categories")
+}
+
+model EmailOtp {
+  id        String @id
+  email     String
+  code      String
+  purpose   String
+  expiresAt String
+  createdAt String
+
+  @@map("email_otps")
+}
+
 model Order {
   id              String  @id
+  customerId      String?
   customerName    String
   customerEmail   String
   customerPhone   String
   shippingAddress String
   city            String
   postalCode      String
-  items           String  // JSON stringified order items
+  items           String
   subtotal        Float
   discount        Float   @default(0)
   total           Float
-  paymentMethod   String  // 'COD' or 'CARD'
-  paymentStatus   String  // 'Pending' or 'Paid'
-  status          String  // 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled'
+  currency        String  @default("USD")
+  paymentMethod   String
+  paymentStatus   String
+  status          String
   date            String
   notes           String?
+  paymentRef      String?
+  customer        Customer? @relation(fields: [customerId], references: [id])
 
   @@map("orders")
 }
 
 model Coupon {
   code         String @id
-  discountType String // 'percentage' or 'fixed'
+  discountType String
   value        Float
   minPurchase  Float  @default(0)
   isActive     Int    @default(1)

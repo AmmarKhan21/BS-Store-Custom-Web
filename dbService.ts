@@ -728,13 +728,22 @@ export async function addOrder(o: any): Promise<any> {
     if (!coupon || !coupon.isActive) {
       throw new Error(`Coupon "${o.couponCode}" is invalid or expired.`);
     }
-    if (subtotal < coupon.minPurchase) {
-      throw new Error(`Coupon requires a minimum purchase of $${coupon.minPurchase.toFixed(2)}.`);
+    const rate = Number(process.env.PKR_EXCHANGE_RATE || 280);
+    const minPurchase = o.currency === "PKR" ? coupon.minPurchase * rate : coupon.minPurchase;
+    if (subtotal < minPurchase) {
+      const sym = o.currency === "PKR" ? "Rs." : "$";
+      throw new Error(`Coupon requires a minimum purchase of ${sym}${minPurchase.toFixed(o.currency === "PKR" ? 0 : 2)}.`);
     }
-    discount = calculateCouponDiscount(coupon, subtotal);
+    if (coupon.discountType === "percentage") {
+      discount = calculateCouponDiscount(coupon, subtotal);
+    } else {
+      discount = o.currency === "PKR" ? coupon.value * rate : coupon.value;
+    }
   }
 
-  const deliveryCharge = subtotal >= 100 ? 0 : 5;
+  const deliveryCharge = o.currency === "PKR"
+    ? (subtotal >= 28000 ? 0 : 1400)
+    : (subtotal >= 100 ? 0 : 5);
   const expectedTotal = Math.max(0, subtotal - discount) + deliveryCharge;
   if (Math.abs(expectedTotal - Number(o.total)) > 0.01) {
     throw new Error("Order total mismatch. Please refresh your cart and try again.");
@@ -742,8 +751,10 @@ export async function addOrder(o: any): Promise<any> {
 
   const id = "ORD-" + Math.floor(1000 + Math.random() * 9000);
   const date = new Date().toISOString();
-  const paymentStatus = o.paymentMethod === "CARD" ? "Paid" : "Pending";
+  const isOnlinePayment = o.paymentMethod === "PAYFAST" || o.paymentMethod === "JAZZCASH";
+  const paymentStatus = isOnlinePayment ? "Pending" : "Pending";
   const status = "Pending";
+  const deferStock = isOnlinePayment;
 
   if (isSupabaseAvailable) {
     try {
@@ -751,6 +762,7 @@ export async function addOrder(o: any): Promise<any> {
       const order = await prisma.order.create({
         data: {
           id,
+          customerId: o.customerId || null,
           customerName: o.customerName,
           customerEmail: o.customerEmail,
           customerPhone: o.customerPhone,
@@ -761,27 +773,30 @@ export async function addOrder(o: any): Promise<any> {
           subtotal,
           discount,
           total: expectedTotal,
+          currency: o.currency || "USD",
           paymentMethod: o.paymentMethod,
           paymentStatus,
           status,
           date,
-          notes: o.notes || null
+          notes: o.notes || null,
+          paymentRef: null
         }
       });
 
-      // Deduct stock
-      for (const item of o.items) {
-        await prisma.product.update({
-          where: { id: item.productId },
-          data: {
-            stock: {
-              decrement: Number(item.quantity)
+      if (!deferStock) {
+        for (const item of o.items) {
+          await prisma.product.update({
+            where: { id: item.productId },
+            data: {
+              stock: {
+                decrement: Number(item.quantity)
+              }
             }
-          }
-        });
+          });
+        }
       }
 
-      return { id, total: expectedTotal };
+      return { id, total: expectedTotal, currency: o.currency || "USD" };
     } catch (err: any) {
       console.error("Prisma addOrder failed, falling back to local database. Error:", err.message);
       isSupabaseAvailable = false;
@@ -792,6 +807,7 @@ export async function addOrder(o: any): Promise<any> {
   
   const newOrder = {
     id,
+    customerId: o.customerId || null,
     customerName: o.customerName,
     customerEmail: o.customerEmail,
     customerPhone: o.customerPhone,
@@ -802,24 +818,28 @@ export async function addOrder(o: any): Promise<any> {
     subtotal,
     discount,
     total: expectedTotal,
+    currency: o.currency || "USD",
     paymentMethod: o.paymentMethod,
     paymentStatus,
     status,
     date,
-    notes: o.notes || null
+    notes: o.notes || null,
+    paymentRef: null,
+    stockDeducted: !deferStock
   };
   db.orders.push(newOrder);
 
-  // Deduct stocks
-  o.items.forEach((item: any) => {
-    const prodIdx = db.products.findIndex(prod => prod.id === item.productId);
-    if (prodIdx !== -1) {
-      db.products[prodIdx].stock = Math.max(0, db.products[prodIdx].stock - Number(item.quantity));
-    }
-  });
+  if (!deferStock) {
+    o.items.forEach((item: any) => {
+      const prodIdx = db.products.findIndex(prod => prod.id === item.productId);
+      if (prodIdx !== -1) {
+        db.products[prodIdx].stock = Math.max(0, db.products[prodIdx].stock - Number(item.quantity));
+      }
+    });
+  }
 
   writeJsonDb(db);
-  return { id, total: expectedTotal };
+  return { id, total: expectedTotal, currency: o.currency || "USD" };
 }
 
 export async function getAllOrders(): Promise<any[]> {

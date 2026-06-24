@@ -50,11 +50,20 @@ export interface Order {
   subtotal: number;
   discount: number;
   total: number;
-  paymentMethod: 'COD' | 'CARD';
+  paymentMethod: 'COD' | 'PAYFAST' | 'JAZZCASH';
   paymentStatus: 'Pending' | 'Paid';
   status: 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
   date: string;
   notes?: string;
+  currency?: 'PKR' | 'USD';
+  customerId?: string;
+}
+
+export interface Customer {
+  id: string;
+  email: string;
+  name: string;
+  phone?: string;
 }
 
 export interface Coupon {

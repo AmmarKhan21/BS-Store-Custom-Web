@@ -24,10 +24,11 @@ export default function AdminApp() {
 
   const loadAdminData = async () => {
     try {
-      const [prodRes, ordRes, coupRes] = await Promise.all([
+      const [prodRes, ordRes, coupRes, catRes] = await Promise.all([
         adminFetch('/api/products'),
         adminFetch('/api/orders'),
         adminFetch('/api/coupons'),
+        adminFetch('/api/categories'),
       ]);
 
       if (prodRes.status === 401 || ordRes.status === 401) {
@@ -38,15 +39,19 @@ export default function AdminApp() {
       const prods = await prodRes.json();
       const ords = await ordRes.json();
       const coups = await coupRes.json();
+      const cats = await catRes.json();
 
       if (Array.isArray(prods)) {
         setProducts(prods);
+      }
+
+      if (Array.isArray(cats) && cats.length > 0) {
+        setCategories(cats.map((c: { name: string }) => c.name));
+      } else if (Array.isArray(prods)) {
         const derivedCategories = Array.from(
           new Set(prods.map((p: Product) => p.category))
         ) as string[];
-        if (derivedCategories.length > 0) {
-          setCategories(derivedCategories);
-        }
+        if (derivedCategories.length > 0) setCategories(derivedCategories);
       }
 
       if (Array.isArray(ords)) setOrders(ords);
@@ -204,43 +209,67 @@ export default function AdminApp() {
     }
   };
 
-  const handleMerchantAddCategory = (categoryName: string) => {
+  const handleMerchantAddCategory = async (categoryName: string) => {
     const trimmed = categoryName.trim();
     if (!trimmed) return;
-    if (categories.some((c) => c.toLowerCase() === trimmed.toLowerCase())) {
-      triggerToast('This category already exists!');
-      return;
+    try {
+      const response = await adminFetch('/api/categories', {
+        method: 'POST',
+        body: JSON.stringify({ name: trimmed }),
+      });
+      if (response.ok) {
+        triggerToast(`Category "${trimmed}" saved.`);
+        const catRes = await adminFetch('/api/categories');
+        const cats = await catRes.json();
+        setCategories(cats.map((c: { name: string }) => c.name));
+      }
+    } catch (e) {
+      console.error('Category add failure:', e);
     }
-    setCategories((prev) => [...prev, trimmed]);
-    triggerToast(`Category "${trimmed}" registered.`);
   };
 
-  const handleMerchantDeleteCategory = (categoryName: string) => {
-    setCategories((prev) => prev.filter((c) => c !== categoryName));
-    setProducts((prev) =>
-      prev.map((p) =>
-        p.category === categoryName ? { ...p, category: 'Uncategorized' } : p
-      )
+  const handleMerchantDeleteCategory = async (categoryName: string) => {
+    const cat = (await (await adminFetch('/api/categories')).json()).find(
+      (c: { name: string }) => c.name === categoryName
     );
-    triggerToast('Category removed. Affected products reassigned.');
+    if (!cat) return;
+    try {
+      const response = await adminFetch(`/api/categories/${cat.id}`, { method: 'DELETE' });
+      if (response.ok) {
+        triggerToast('Category removed.');
+        const catRes = await adminFetch('/api/categories');
+        const cats = await catRes.json();
+        setCategories(cats.map((c: { name: string }) => c.name));
+        const prodRes = await adminFetch('/api/products');
+        setProducts(await prodRes.json());
+      }
+    } catch (e) {
+      console.error('Category delete failure:', e);
+    }
   };
 
-  const handleMerchantUpdateCategory = (oldName: string, newName: string) => {
+  const handleMerchantUpdateCategory = async (oldName: string, newName: string) => {
     const trimmed = newName.trim();
     if (!trimmed || oldName === trimmed) return;
-    if (
-      categories.some(
-        (c) => c !== oldName && c.toLowerCase() === trimmed.toLowerCase()
-      )
-    ) {
-      triggerToast('A category with that name already exists!');
-      return;
+    const cats = await (await adminFetch('/api/categories')).json();
+    const cat = cats.find((c: { name: string }) => c.name === oldName);
+    if (!cat) return;
+    try {
+      const response = await adminFetch(`/api/categories/${cat.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ name: trimmed }),
+      });
+      if (response.ok) {
+        triggerToast(`Category renamed to "${trimmed}".`);
+        const catRes = await adminFetch('/api/categories');
+        const updated = await catRes.json();
+        setCategories(updated.map((c: { name: string }) => c.name));
+        const prodRes = await adminFetch('/api/products');
+        setProducts(await prodRes.json());
+      }
+    } catch (e) {
+      console.error('Category update failure:', e);
     }
-    setCategories((prev) => prev.map((c) => (c === oldName ? trimmed : c)));
-    setProducts((prev) =>
-      prev.map((p) => (p.category === oldName ? { ...p, category: trimmed } : p))
-    );
-    triggerToast(`Category renamed to "${trimmed}".`);
   };
 
   if (isAuthenticated === null) {

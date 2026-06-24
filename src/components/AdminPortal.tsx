@@ -460,7 +460,7 @@ export default function AdminPortal({
                       <td className="py-3.5 px-4 text-slate-600">{ord.city}</td>
                       <td className="py-3.5 px-4 text-center">
                         <span className={`px-2 py-0.5 rounded font-mono text-[10px] font-bold ${
-                          ord.paymentMethod === 'CARD' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-indigo-50 text-indigo-750 border border-indigo-100'
+                          ord.paymentMethod !== 'COD' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-indigo-50 text-indigo-750 border border-indigo-100'
                         }`}>
                           {ord.paymentMethod}
                         </span>
@@ -954,11 +954,11 @@ export default function AdminPortal({
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
                       <div className="flex items-center gap-2">
                         <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
-                          ord.paymentMethod === 'CARD'
+                          ord.paymentMethod !== 'COD'
                             ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
                             : 'bg-indigo-50 text-indigo-700 border border-indigo-100'
                         }`}>
-                          {ord.paymentMethod === 'CARD' ? 'Card' : 'COD'}
+                          {ord.paymentMethod === 'COD' ? 'COD' : ord.paymentMethod}
                         </span>
                         <label className="text-[10px] font-bold text-slate-600 uppercase tracking-zinc-700 font-display">Dispatch:</label>
                         <select

@@ -1,15 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CartItem, Coupon, Order } from '../types';
-import { ShieldCheck, CreditCard, ShoppingBag, Truck, Check, AlertCircle, ArrowLeft, ArrowRight, Loader2, Sparkles } from 'lucide-react';
+import { ShieldCheck, CreditCard, ShoppingBag, Truck, Check, AlertCircle, ArrowLeft, ArrowRight, Loader2, Sparkles, Smartphone } from 'lucide-react';
+import { useCurrency } from '../context/CurrencyContext';
+import { getDeliveryCharge } from '../lib/currency';
+import { getCustomerProfile } from '../lib/customerAuth';
+import { submitPaymentForm } from '../lib/customerAuth';
 
 interface CheckoutWizardProps {
   cartItems: CartItem[];
   appliedCoupon: Coupon | null;
   onClose: () => void;
-  onSubmitOrder: (order: Order, couponCode?: string) => Promise<{ success: boolean; orderId?: string; error?: string }>;
+  onSubmitOrder: (
+    order: Order,
+    couponCode?: string
+  ) => Promise<{
+    success: boolean;
+    orderId?: string;
+    error?: string;
+    requiresPayment?: boolean;
+    checkoutUrl?: string;
+    formFields?: Record<string, string>;
+  }>;
 }
 
 export default function CheckoutWizard({ cartItems, appliedCoupon, onClose, onSubmitOrder }: CheckoutWizardProps) {
+  const { currency, convert, symbol } = useCurrency();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [checkoutError, setCheckoutError] = useState('');
 
@@ -22,32 +37,38 @@ export default function CheckoutWizard({ cartItems, appliedCoupon, onClose, onSu
   const [shippingPostal, setShippingPostal] = useState('');
   const [orderNotes, setOrderNotes] = useState('');
 
+  useEffect(() => {
+    getCustomerProfile().then((p) => {
+      if (p) {
+        setShippingName(p.name);
+        setShippingEmail(p.email);
+        if (p.phone) setShippingPhone(p.phone);
+      }
+    });
+  }, []);
+
   // Phase 2: Payment States
-  const [paymentMethod, setPaymentMethod] = useState<'COD' | 'CARD'>('COD');
-  const [cardNumber, setCardNumber] = useState('');
-  const [cardExpiry, setCardExpiry] = useState('');
-  const [cardCVV, setCardCVV] = useState('');
-  const [cardName, setCardName] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'COD' | 'PAYFAST' | 'JAZZCASH'>('COD');
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Phase 3: Created Order State
   const [createdOrder, setCreatedOrder] = useState<Order | null>(null);
 
-  // Compute total figures
-  const subtotal = cartItems.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
+  // Compute total figures (prices stored in USD, display in selected currency)
+  const subtotal = cartItems.reduce((acc, item) => acc + convert(item.product.price) * item.quantity, 0);
   
   let discountAmount = 0;
   if (appliedCoupon) {
-    if (appliedCoupon.isActive && subtotal >= appliedCoupon.minPurchase) {
+    if (appliedCoupon.isActive && subtotal >= convert(appliedCoupon.minPurchase)) {
       if (appliedCoupon.discountType === 'percentage') {
         discountAmount = (subtotal * appliedCoupon.value) / 100;
       } else {
-        discountAmount = appliedCoupon.value;
+        discountAmount = convert(appliedCoupon.value);
       }
     }
   }
 
-  const deliveryCharge = subtotal >= 100 ? 0 : 5;
+  const deliveryCharge = getDeliveryCharge(subtotal, currency);
   const finalTotal = Math.max(0, subtotal - discountAmount) + deliveryCharge;
 
   const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
@@ -59,15 +80,8 @@ export default function CheckoutWizard({ cartItems, appliedCoupon, onClose, onSu
     shippingAddress.trim().length >= 5 &&
     shippingPostal.trim().length >= 4;
 
-  const isCardComplete =
-    cardName.trim().length >= 2 &&
-    cardNumber.length === 16 &&
-    cardExpiry.length === 4 &&
-    cardCVV.length === 3;
-
   const canProceedToPayment = isShippingComplete;
-  const canPlaceOrder =
-    paymentMethod === 'COD' ? true : isCardComplete;
+  const canPlaceOrder = true;
 
   const handleProceedToPayment = (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,13 +96,6 @@ export default function CheckoutWizard({ cartItems, appliedCoupon, onClose, onSu
 
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (paymentMethod === 'CARD') {
-      if (cardNumber.length < 16 || cardExpiry.length < 4 || cardCVV.length < 3 || !cardName.trim()) {
-        setCheckoutError('Please provide a valid card number, expiration, and CVV *');
-        setTimeout(() => setCheckoutError(''), 4050);
-        return;
-      }
-    }
 
     if (appliedCoupon) {
       if (!appliedCoupon.isActive) {
@@ -96,8 +103,8 @@ export default function CheckoutWizard({ cartItems, appliedCoupon, onClose, onSu
         setTimeout(() => setCheckoutError(''), 4050);
         return;
       }
-      if (subtotal < appliedCoupon.minPurchase) {
-        setCheckoutError(`Coupon requires a minimum purchase of $${appliedCoupon.minPurchase.toFixed(2)}.`);
+      if (subtotal < convert(appliedCoupon.minPurchase)) {
+        setCheckoutError(`Coupon requires a minimum purchase of ${symbol}${convert(appliedCoupon.minPurchase).toFixed(currency === 'PKR' ? 0 : 2)}.`);
         setTimeout(() => setCheckoutError(''), 4050);
         return;
       }
@@ -117,7 +124,7 @@ export default function CheckoutWizard({ cartItems, appliedCoupon, onClose, onSu
       items: cartItems.map(item => ({
         productId: item.product.id,
         productName: item.product.name,
-        price: item.product.price,
+        price: convert(item.product.price),
         quantity: item.quantity,
         selectedSize: item.selectedSize,
         selectedColor: item.selectedColor,
@@ -126,8 +133,9 @@ export default function CheckoutWizard({ cartItems, appliedCoupon, onClose, onSu
       subtotal,
       discount: discountAmount,
       total: finalTotal,
+      currency,
       paymentMethod,
-      paymentStatus: paymentMethod === 'CARD' ? 'Paid' : 'Pending',
+      paymentStatus: 'Pending',
       status: 'Pending',
       date: new Date().toISOString(),
       notes: orderNotes
@@ -136,6 +144,11 @@ export default function CheckoutWizard({ cartItems, appliedCoupon, onClose, onSu
     const result = await onSubmitOrder(orderPayload, appliedCoupon?.code);
 
     setIsProcessing(false);
+
+    if (result.success && result.requiresPayment && result.checkoutUrl) {
+      submitPaymentForm(result.checkoutUrl, result.formFields || {});
+      return;
+    }
 
     if (result.success && result.orderId) {
       setCreatedOrder({ ...orderPayload, id: result.orderId });
@@ -352,157 +365,39 @@ export default function CheckoutWizard({ cartItems, appliedCoupon, onClose, onSu
                   2. Choose Payment Settlement Method
                 </h3>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Option: Cash on Delivery */}
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('COD')}
-                    className={`p-4 border-2 rounded-xl text-left flex flex-col justify-between transition-all ${
-                      paymentMethod === 'COD'
-                        ? 'border-indigo-600 bg-indigo-50 shadow-md ring-2 ring-indigo-200'
-                        : 'border-slate-200 bg-white hover:border-indigo-300 hover:bg-slate-50'
-                    }`}
-                  >
-                    <div className="flex items-start gap-3 w-full">
-                      <div className={`p-2.5 rounded-lg shrink-0 ${
-                        paymentMethod === 'COD'
-                          ? 'bg-indigo-600 text-white'
-                          : 'bg-slate-100 text-slate-600 border border-slate-200'
-                      }`}>
-                        <Truck size={22} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2">
-                          <h4 className={`font-bold text-sm ${
-                            paymentMethod === 'COD' ? 'text-indigo-900' : 'text-slate-900'
-                          }`}>
-                            Cash on Delivery
-                          </h4>
-                          <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                            paymentMethod === 'COD'
-                              ? 'border-indigo-600 bg-indigo-600'
-                              : 'border-slate-300 bg-white'
-                          }`}>
-                            {paymentMethod === 'COD' && <Check size={12} className="text-white" />}
-                          </span>
-                        </div>
-                        <p className="text-xs text-slate-600 mt-1">Pay cash when your order arrives at your door.</p>
-                        <p className="text-[10px] font-semibold text-emerald-700 mt-2">No upfront payment required</p>
-                      </div>
+                <div className="grid grid-cols-1 gap-3">
+                  <button type="button" onClick={() => setPaymentMethod('COD')} className={`p-4 border-2 rounded-xl text-left flex items-start gap-3 transition-all ${paymentMethod === 'COD' ? 'border-indigo-600 bg-indigo-50' : 'border-slate-200 hover:border-indigo-300'}`}>
+                    <Truck size={22} className={paymentMethod === 'COD' ? 'text-indigo-600' : 'text-slate-500'} />
+                    <div>
+                      <h4 className="font-bold text-sm">Cash on Delivery</h4>
+                      <p className="text-xs text-slate-600">Pay when your order arrives</p>
                     </div>
+                    {paymentMethod === 'COD' && <Check size={16} className="text-indigo-600 ml-auto" />}
                   </button>
 
-                  {/* Option: Credit Card */}
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('CARD')}
-                    className={`p-4 border-2 rounded-xl text-left flex flex-col justify-between transition-all ${
-                      paymentMethod === 'CARD'
-                        ? 'border-indigo-600 bg-indigo-50 shadow-md ring-2 ring-indigo-200'
-                        : 'border-slate-200 bg-white hover:border-indigo-300 hover:bg-slate-50'
-                    }`}
-                  >
-                    <div className="flex items-start gap-3 w-full">
-                      <div className={`p-2.5 rounded-lg shrink-0 ${
-                        paymentMethod === 'CARD'
-                          ? 'bg-indigo-600 text-white'
-                          : 'bg-slate-100 text-slate-600 border border-slate-200'
-                      }`}>
-                        <CreditCard size={22} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2">
-                          <h4 className={`font-bold text-sm ${
-                            paymentMethod === 'CARD' ? 'text-indigo-900' : 'text-slate-900'
-                          }`}>
-                            Online Card Payment
-                          </h4>
-                          <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                            paymentMethod === 'CARD'
-                              ? 'border-indigo-600 bg-indigo-600'
-                              : 'border-slate-300 bg-white'
-                          }`}>
-                            {paymentMethod === 'CARD' && <Check size={12} className="text-white" />}
-                          </span>
-                        </div>
-                        <p className="text-xs text-slate-600 mt-1">Visa, Mastercard & UnionPay accepted.</p>
-                        <p className="text-[10px] font-semibold text-indigo-700 mt-2 flex items-center gap-1">
-                          <ShieldCheck size={11} /> Secure SSL encrypted
-                        </p>
-                      </div>
+                  <button type="button" onClick={() => setPaymentMethod('PAYFAST')} className={`p-4 border-2 rounded-xl text-left flex items-start gap-3 transition-all ${paymentMethod === 'PAYFAST' ? 'border-indigo-600 bg-indigo-50' : 'border-slate-200 hover:border-indigo-300'}`}>
+                    <CreditCard size={22} className={paymentMethod === 'PAYFAST' ? 'text-indigo-600' : 'text-slate-500'} />
+                    <div>
+                      <h4 className="font-bold text-sm">PayFast</h4>
+                      <p className="text-xs text-slate-600">Cards, Raast & bank — via PayFast Pakistan</p>
                     </div>
+                    {paymentMethod === 'PAYFAST' && <Check size={16} className="text-indigo-600 ml-auto" />}
+                  </button>
+
+                  <button type="button" onClick={() => setPaymentMethod('JAZZCASH')} className={`p-4 border-2 rounded-xl text-left flex items-start gap-3 transition-all ${paymentMethod === 'JAZZCASH' ? 'border-indigo-600 bg-indigo-50' : 'border-slate-200 hover:border-indigo-300'}`}>
+                    <Smartphone size={22} className={paymentMethod === 'JAZZCASH' ? 'text-indigo-600' : 'text-slate-500'} />
+                    <div>
+                      <h4 className="font-bold text-sm">JazzCash</h4>
+                      <p className="text-xs text-slate-600">Mobile wallet & card via JazzCash</p>
+                    </div>
+                    {paymentMethod === 'JAZZCASH' && <Check size={16} className="text-indigo-600 ml-auto" />}
                   </button>
                 </div>
 
-                {/* Secure Gateway inputs on option CARD selected */}
-                {paymentMethod === 'CARD' && (
-                  <div className="p-5 bg-slate-50 border border-slate-200 rounded-xl space-y-3.5 text-xs">
-                    <div className="flex items-center justify-between border-b border-slate-200 pb-2 mb-2">
-                      <h4 className="font-bold text-slate-800 uppercase tracking-wider text-[10px]">Secure Bank SSL Connection</h4>
-                      <div className="flex text-emerald-600 items-center gap-1 text-[10px] font-bold">
-                        <ShieldCheck size={12} /> 128-Bit Encryption Private
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-                        Cardholder Complete Name *
-                      </label>
-                      <input
-                        required
-                        type="text"
-                        value={cardName}
-                        onChange={(e) => setCardName(e.target.value)}
-                        placeholder="e.g. AMMAR YOUNAS"
-                        className="w-full p-2.5 bg-white border border-slate-250 rounded-lg font-medium tracking-wide placeholder-slate-400 capitalize text-slate-800"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-                        Credit Card Number *
-                      </label>
-                      <input
-                        required
-                        type="text"
-                        maxLength={16}
-                        value={cardNumber}
-                        onChange={(e) => setCardNumber(e.target.value.replace(/\D/g, ''))}
-                        placeholder="4214 •••• •••• 9842"
-                        className="w-full p-2.5 bg-white border border-slate-250 rounded-lg font-mono font-medium tracking-widest placeholder-slate-400 text-slate-800"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3.5">
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-                          Expiry MM/YY *
-                        </label>
-                        <input
-                          required
-                          type="text"
-                          maxLength={4}
-                          value={cardExpiry}
-                          onChange={(e) => setCardExpiry(e.target.value.replace(/\D/g, ''))}
-                          placeholder="MMYY"
-                          className="w-full p-2.5 bg-white border border-slate-250 rounded-lg font-mono font-medium tracking-widest placeholder-slate-400 text-center text-slate-800"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-                          CVV Security Code *
-                        </label>
-                        <input
-                          required
-                          type="password"
-                          maxLength={3}
-                          value={cardCVV}
-                          onChange={(e) => setCardCVV(e.target.value.replace(/\D/g, ''))}
-                          placeholder="•••"
-                          className="w-full p-2.5 bg-white border border-slate-250 rounded-lg font-mono font-medium tracking-widest placeholder-slate-400 text-center text-slate-800"
-                        />
-                      </div>
-                    </div>
+                {(paymentMethod === 'PAYFAST' || paymentMethod === 'JAZZCASH') && (
+                  <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-xl text-xs text-indigo-800 flex items-center gap-2">
+                    <ShieldCheck size={14} />
+                    You will be redirected to {paymentMethod === 'PAYFAST' ? 'PayFast' : 'JazzCash'} secure checkout to complete payment.
                   </div>
                 )}
 
@@ -542,16 +437,11 @@ export default function CheckoutWizard({ cartItems, appliedCoupon, onClose, onSu
                     ) : (
                       <>
                         <CreditCard size={16} />
-                        <span>Pay & Place Order</span>
+                        <span>Pay via {paymentMethod === 'PAYFAST' ? 'PayFast' : 'JazzCash'}</span>
                       </>
                     )}
                   </button>
                 </div>
-                {paymentMethod === 'CARD' && !canPlaceOrder && (
-                  <p className="text-[10px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-right">
-                    Complete all card fields (16-digit number, MMYY expiry, 3-digit CVV, cardholder name)
-                  </p>
-                )}
               </form>
             )}
 
@@ -643,7 +533,7 @@ export default function CheckoutWizard({ cartItems, appliedCoupon, onClose, onSu
                         {item.quantity}x • {item.selectedSize || 'Standard'}
                       </p>
                     </div>
-                    <span className="font-bold text-slate-900">${(item.product.price * item.quantity).toFixed(2)}</span>
+                    <span className="font-bold text-slate-900">{symbol}{(convert(item.product.price) * item.quantity).toFixed(currency === 'PKR' ? 0 : 2)}</span>
                   </div>
                 ))}
               </div>
@@ -653,23 +543,23 @@ export default function CheckoutWizard({ cartItems, appliedCoupon, onClose, onSu
             <div className="border-t border-slate-200 pt-3 space-y-2 text-xs font-sans">
               <div className="flex justify-between text-slate-500">
                 <span>Subtotal Items</span>
-                <span className="font-semibold text-slate-900">${subtotal.toFixed(2)}</span>
+                <span className="font-semibold text-slate-900">{symbol}{subtotal.toFixed(currency === 'PKR' ? 0 : 2)}</span>
               </div>
               {discountAmount > 0 && (
                 <div className="flex justify-between text-red-650 font-bold">
                   <span>Coupon discount</span>
-                  <span>-${discountAmount.toFixed(2)}</span>
+                  <span>-{symbol}{discountAmount.toFixed(currency === 'PKR' ? 0 : 2)}</span>
                 </div>
               )}
               <div className="flex justify-between text-slate-500">
                 <span>Shipping fee</span>
                 <span className="text-slate-900 font-medium font-sans">
-                  {subtotal >= 100 ? 'FREE' : `$${deliveryCharge.toFixed(2)}`}
+                  {deliveryCharge === 0 ? 'FREE' : `${symbol}${deliveryCharge.toFixed(currency === 'PKR' ? 0 : 2)}`}
                 </span>
               </div>
               <div className="flex justify-between text-sm font-bold text-slate-900 border-t border-slate-200/50 pt-2.5">
                 <span>Total checkout</span>
-                <span className="text-base text-indigo-700 font-display font-black">${finalTotal.toFixed(2)}</span>
+                <span className="text-base text-indigo-700 font-display font-black">{symbol}{finalTotal.toFixed(currency === 'PKR' ? 0 : 2)}</span>
               </div>
             </div>
 
