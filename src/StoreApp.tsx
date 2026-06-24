@@ -10,6 +10,7 @@ import ProductCard from './components/ProductCard';
 import ProductModal from './components/ProductModal';
 import CartDrawer from './components/CartDrawer';
 import CheckoutWizard from './components/CheckoutWizard';
+import AppLoader from './components/AppLoader';
 import { 
   ShoppingBag, 
   Search, 
@@ -25,7 +26,7 @@ import {
 } from 'lucide-react';
 
 export default function StoreApp() {
-  const { currency, format, country } = useCurrency();
+  const { currency, format, country, loading: currencyLoading } = useCurrency();
   usePageMeta({
     title: 'Shop',
     description: 'Bismillah Cotton & Sports Hub — premium cotton fabrics, clothing & sports wear. COD, PayFast & JazzCash.',
@@ -322,6 +323,12 @@ export default function StoreApp() {
   };
 
   return (
+    <>
+      <AppLoader
+        visible={isLoading || currencyLoading}
+        variant="store"
+        message="Loading products & prices…"
+      />
     <div className="min-h-screen bg-slate-50 font-sans selection:bg-indigo-100 flex flex-col justify-between">
       
       {/* Toast Alert Notification */}
@@ -777,12 +784,7 @@ export default function StoreApp() {
                 )}
 
                 {/* LOADING PLACEHOLDER */}
-                {isLoading ? (
-                  <div className="flex flex-col items-center justify-center py-24 bg-white border border-slate-200 rounded-2xl">
-                    <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4" />
-                    <p className="text-xs text-slate-500 font-sans">Loading products...</p>
-                  </div>
-                ) : sortedProducts.length === 0 ? (
+                {sortedProducts.length === 0 ? (
                   /* EMPTY SEARCH RESULT STATE */
                   <div className="text-center py-20 bg-white border border-slate-200 rounded-2xl p-6">
                     <AlertCircle size={40} className="text-slate-300 mx-auto mb-3" />
@@ -1065,5 +1067,6 @@ export default function StoreApp() {
       )}
 
     </div>
+    </>
   );
 }

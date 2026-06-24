@@ -5,6 +5,7 @@ import { Currency, convertFromUsd } from './lib/currency';
 import { CATEGORIES } from './mockData';
 import AdminPortal from './components/AdminPortal';
 import AdminLogin from './components/AdminLogin';
+import AppLoader from './components/AppLoader';
 import { adminFetch, verifyAdminSession, logoutAdmin, getAdminToken } from './lib/auth';
 import { isAdminDashboardPath } from './lib/adminRoutes';
 import { Sparkles, LogOut, Store } from 'lucide-react';
@@ -12,7 +13,8 @@ import { Sparkles, LogOut, Store } from 'lucide-react';
 export default function AdminApp() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isBootstrapping, setIsBootstrapping] = useState(true);
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
@@ -124,10 +126,17 @@ export default function AdminApp() {
   };
 
   useEffect(() => {
-    verifyAdminSession().then((valid) => {
+    let cancelled = false;
+    (async () => {
+      const valid = await verifyAdminSession();
+      if (cancelled) return;
       setIsAuthenticated(valid);
-      if (valid) loadAdminData();
-    });
+      if (valid) await loadAdminData();
+      if (!cancelled) setIsBootstrapping(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleLogout = async () => {
@@ -370,11 +379,13 @@ export default function AdminApp() {
     }
   };
 
-  if (isAuthenticated === null) {
+  if (isBootstrapping) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-      </div>
+      <AppLoader
+        visible
+        variant="admin"
+        message={isAuthenticated ? 'Loading orders, products & analytics…' : 'Verifying your session…'}
+      />
     );
   }
 
@@ -384,9 +395,10 @@ export default function AdminApp() {
     }
     return (
       <AdminLogin
-        onSuccess={() => {
+        onSuccess={async () => {
+          setIsBootstrapping(true);
           setIsAuthenticated(true);
-          loadAdminData();
+          await loadAdminData();
           const redirectTo =
             typeof location.state === 'object' &&
             location.state !== null &&
@@ -396,6 +408,7 @@ export default function AdminApp() {
               ? (location.state as { from: string }).from
               : '/admin';
           navigate(redirectTo, { replace: true });
+          setIsBootstrapping(false);
         }}
       />
     );

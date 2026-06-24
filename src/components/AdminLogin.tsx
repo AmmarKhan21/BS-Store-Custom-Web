@@ -3,7 +3,7 @@ import { Lock, LogIn } from 'lucide-react';
 import { loginAdmin } from '../lib/auth';
 
 interface AdminLoginProps {
-  onSuccess: () => void;
+  onSuccess: () => void | Promise<void>;
 }
 
 export default function AdminLogin({ onSuccess }: AdminLoginProps) {
@@ -18,13 +18,13 @@ export default function AdminLogin({ onSuccess }: AdminLoginProps) {
     setIsSubmitting(true);
 
     const result = await loginAdmin(username, password);
-    setIsSubmitting(false);
 
     if (result.success) {
-      onSuccess();
+      await onSuccess();
     } else {
       setError(result.error || 'Login failed');
     }
+    setIsSubmitting(false);
   };
 
   return (
