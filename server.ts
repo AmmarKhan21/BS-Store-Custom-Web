@@ -4,7 +4,6 @@ import path from "path";
 import cors from "cors";
 import { createServer as createViteServer } from "vite";
 import {
-  isSupabaseEnabled,
   isSupabaseAvailable,
   initializeDatabase,
   getAllProducts,
@@ -21,6 +20,12 @@ import {
   deleteCoupon,
   getStats
 } from "./dbService";
+import {
+  verifyCredentials,
+  createSessionToken,
+  verifySessionToken,
+  extractToken
+} from "./auth";
 
 const app = express();
 const PORT = 3000;
@@ -31,16 +36,37 @@ app.use(express.json());
 // Initialize SQL databases on server startup (Prisma or SQLite Fallback)
 initializeDatabase();
 
-/* --- DATABASE BACKEND ENDPOINTS --- */
+const requireAdmin = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const token = extractToken(
+    req.headers.authorization,
+    req.headers["x-admin-token"]
+  );
+  if (!verifySessionToken(token)) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  next();
+};
 
-// GET ENGINE STATUS (Supabase Prisma vs. JSON-File Sandbox)
-app.get("/api/db-status", (req, res) => {
-  res.json({
-    success: true,
-    isSupabaseEnabled: isSupabaseAvailable,
-    engine: isSupabaseAvailable ? "Supabase Cloud DB (Prisma)" : "Local JSON-File Sandbox"
-  });
+/* --- ADMIN AUTH ENDPOINTS --- */
+
+app.post("/api/admin/login", (req, res) => {
+  const { username, password } = req.body ?? {};
+  if (!verifyCredentials(username, password)) {
+    return res.status(401).json({ success: false, error: "Invalid credentials" });
+  }
+  const token = createSessionToken();
+  res.json({ success: true, token });
 });
+
+app.get("/api/admin/me", requireAdmin, (_req, res) => {
+  res.json({ success: true, role: "admin" });
+});
+
+app.post("/api/admin/logout", (_req, res) => {
+  res.json({ success: true });
+});
+
+/* --- DATABASE BACKEND ENDPOINTS --- */
 
 // GET ALL PRODUCTS
 app.get("/api/products", async (req, res) => {
@@ -73,7 +99,7 @@ app.get("/api/products/:id", async (req, res) => {
 });
 
 // ADD NEW PRODUCT FROM THE ADMIN CONSOLE
-app.post("/api/products", async (req, res) => {
+app.post("/api/products", requireAdmin, async (req, res) => {
   try {
     const newProd = await addProduct(req.body);
     res.status(201).json({ ...newProd, success: true });
@@ -83,7 +109,7 @@ app.post("/api/products", async (req, res) => {
 });
 
 // UPDATE PRODUCT IN DATABASE
-app.put("/api/products/:id", async (req, res) => {
+app.put("/api/products/:id", requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     await updateProduct(id, req.body);
@@ -94,7 +120,7 @@ app.put("/api/products/:id", async (req, res) => {
 });
 
 // DELETE PRODUCT FROM DATABASE
-app.delete("/api/products/:id", async (req, res) => {
+app.delete("/api/products/:id", requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     await deleteProduct(id);
@@ -126,7 +152,7 @@ app.post("/api/orders", async (req, res) => {
 });
 
 // GET ALL ORDERS FOR MERCHANDISE DASHBOARD
-app.get("/api/orders", async (req, res) => {
+app.get("/api/orders", requireAdmin, async (req, res) => {
   try {
     const ordersList = await getAllOrders();
     res.json(ordersList);
@@ -136,7 +162,7 @@ app.get("/api/orders", async (req, res) => {
 });
 
 // UPDATE ORDER STATUS
-app.put("/api/orders/:id/status", async (req, res) => {
+app.put("/api/orders/:id/status", requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const { status, paymentStatus } = req.body;
@@ -158,7 +184,7 @@ app.get("/api/coupons", async (req, res) => {
 });
 
 // CREATE PROMO COUPON FROM ADMIN TERMINAL
-app.post("/api/coupons", async (req, res) => {
+app.post("/api/coupons", requireAdmin, async (req, res) => {
   try {
     const codeObj = await addCoupon(req.body);
     res.json({ success: true, code: codeObj.code });
@@ -168,7 +194,7 @@ app.post("/api/coupons", async (req, res) => {
 });
 
 // DEACTIVATE PROMO COUPON FROM ADMIN TERMINAL
-app.delete("/api/coupons/:code", async (req, res) => {
+app.delete("/api/coupons/:code", requireAdmin, async (req, res) => {
   try {
     const { code } = req.params;
     await deleteCoupon(code);
@@ -179,7 +205,7 @@ app.delete("/api/coupons/:code", async (req, res) => {
 });
 
 // ADVANCED METRIC DASHBOARD STATS GENERATION VIA AGGREGATES
-app.get("/api/stats", async (req, res) => {
+app.get("/api/stats", requireAdmin, async (req, res) => {
   try {
     const statsObj = await getStats();
     res.json(statsObj);
