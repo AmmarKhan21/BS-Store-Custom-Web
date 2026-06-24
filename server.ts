@@ -636,7 +636,12 @@ app.delete("/api/coupons/:code", requireAdmin, async (req, res) => {
 // ADVANCED METRIC DASHBOARD STATS GENERATION VIA AGGREGATES
 app.get("/api/stats", requireAdmin, async (req, res) => {
   try {
-    const statsObj = await getStats();
+    const { days, from, to } = req.query;
+    const statsObj = await getStats({
+      days: days ? Number(days) : undefined,
+      from: typeof from === "string" ? from : undefined,
+      to: typeof to === "string" ? to : undefined,
+    });
     res.json(statsObj);
   } catch (err: any) {
     res.status(500).json({ error: err.message });

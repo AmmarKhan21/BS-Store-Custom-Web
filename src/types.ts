@@ -95,4 +95,7 @@ export interface StoreStats {
   outOfStockCount: number;
   lowStockCount: number;
   lowStockProducts: { id: string; name: string; stock: number; category: string }[];
+  dateRange?: { from: string; to: string };
 }
+
+export type StatsDateRange = { days?: number; from?: string; to?: string };

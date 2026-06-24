@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Product, Order, Coupon, StoreStats, AdminCustomer } from '../types';
+import { Product, Order, Coupon, StoreStats, AdminCustomer, StatsDateRange } from '../types';
 import { 
   BarChart, 
   TrendingUp, 
@@ -43,6 +43,8 @@ interface AdminPortalProps {
   onUpdateCategory: (oldName: string, newName: string) => void;
   stats: StoreStats | null;
   customers: AdminCustomer[];
+  statsRange: StatsDateRange;
+  onStatsRangeChange: (range: StatsDateRange) => void;
   onUpdateOrderTracking: (orderId: string, trackingNumber: string) => void;
   onUploadImage: (file: File) => Promise<string | null>;
 }
@@ -65,6 +67,8 @@ export default function AdminPortal({
   onUpdateCategory,
   stats,
   customers,
+  statsRange,
+  onStatsRangeChange,
   onUpdateOrderTracking,
   onUploadImage,
 }: AdminPortalProps) {
@@ -102,6 +106,10 @@ export default function AdminPortal({
   const [couponFormError, setCouponFormError] = useState('');
   const [imageUploading, setImageUploading] = useState(false);
   const [trackingDrafts, setTrackingDrafts] = useState<Record<string, string>>({});
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
+
+  const CHART_BAR_MAX_PX = 140;
 
   // Customer Orders Filters
   const [orderQuery, setOrderQuery] = useState('');
@@ -124,8 +132,22 @@ export default function AdminPortal({
 
   const revenueChartData = (stats?.revenueByDays ?? []).map((d) => ({
     label: new Date(d.date + 'T12:00:00').toLocaleDateString('en', { weekday: 'short', month: 'short', day: 'numeric' }),
+    shortLabel: new Date(d.date + 'T12:00:00').toLocaleDateString('en', { month: 'short', day: 'numeric' }),
     value: d.amount,
+    date: d.date,
   }));
+
+  const chartTotal = revenueChartData.reduce((s, d) => s + d.value, 0);
+  const maxChartVal = Math.max(...revenueChartData.map((d) => d.value), 1);
+
+  const isPresetActive = (days: number) =>
+    !statsRange.from && !statsRange.to && (statsRange.days ?? 7) === days;
+
+  const applyCustomRange = () => {
+    if (customFrom && customTo && customFrom <= customTo) {
+      onStatsRangeChange({ from: customFrom, to: customTo });
+    }
+  };
 
   const categoryChartData = stats?.categorySales?.length
     ? stats.categorySales
@@ -137,8 +159,6 @@ export default function AdminPortal({
           revenue: catProducts.reduce((s, p) => s + p.price, 0),
         };
       });
-
-  const maxChartVal = Math.max(...revenueChartData.map(d => d.value), 1) * 1.15;
 
   const handleImageFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -330,7 +350,7 @@ export default function AdminPortal({
                 <span className="text-2xl font-bold text-slate-900">${totalSales.toFixed(2)}</span>
                 <span className="text-[10px] text-indigo-600 font-bold px-1.5 py-0.2 bg-indigo-50 rounded">Live</span>
               </div>
-              <p className="text-[10px] text-slate-400 mt-2 font-sans">Excluding manual Cancelled baskets</p>
+              <p className="text-[10px] text-slate-400 mt-2 font-sans">For selected date range</p>
               <div className="absolute right-4 bottom-4 text-indigo-900/10 group-hover:scale-105 transition-transform">
                 <DollarSign size={40} className="stroke-[1.5]" />
               </div>
@@ -343,7 +363,7 @@ export default function AdminPortal({
                 <span className="text-2xl font-bold text-slate-900">{totalOrders} Orders</span>
                 <span className="text-[10px] text-indigo-600 font-bold px-1.5 py-0.2 bg-indigo-50 rounded">Realtime</span>
               </div>
-              <p className="text-[10px] text-slate-400 mt-2">Placed across COD and Cards select</p>
+              <p className="text-[10px] text-slate-400 mt-2">In selected period</p>
               <div className="absolute right-4 bottom-4 text-indigo-900/10 group-hover:scale-105 transition-transform">
                 <ShoppingBag size={40} className="stroke-[1.5]" />
               </div>
@@ -400,42 +420,99 @@ export default function AdminPortal({
             
             {/* Custom Interactive CSS Bar Chart representing daily performance */}
             <div className="p-5 bg-white border border-slate-200 rounded-xl lg:col-span-2">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 border-b border-slate-100 pb-3 mb-4">
                 <div>
-                  <h3 className="font-display font-bold text-sm text-slate-900 uppercase tracking-wider">Weekly Revenue Analytics</h3>
-                  <p className="text-[10px] text-slate-500 font-sans">Visual representation of gross transactions checkout metrics</p>
+                  <h3 className="font-display font-bold text-sm text-slate-900 uppercase tracking-wider">Revenue Analytics</h3>
+                  <p className="text-[10px] text-slate-500 font-sans">
+                    {stats?.dateRange
+                      ? `${stats.dateRange.from} → ${stats.dateRange.to}`
+                      : 'Daily gross checkout revenue'}
+                  </p>
                 </div>
-                <div className="text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded border border-indigo-100">
-                  Last {revenueChartData.length} days: ${revenueChartData.reduce((s, d) => s + d.value, 0).toFixed(0)}
+                <div className="text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded border border-indigo-100 whitespace-nowrap">
+                  Total: ${chartTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                 </div>
               </div>
 
-              {revenueChartData.length === 0 ? (
-                <div className="h-48 flex items-center justify-center text-xs text-slate-400 italic">No revenue data yet — orders will appear here</div>
-              ) : (
-              <div className="h-48 flex items-end justify-between gap-2.5 px-2 pt-6 pb-2" id="analyst-chart">
-                {revenueChartData.map((data, index) => {
-                  const percentageHeight = (data.value / maxChartVal) * 100;
-                  return (
-                    <div key={index} className="flex-1 flex flex-col items-center group relative z-[2]">
-                      
-                      {/* Tooltip dynamic hover */}
-                      <div className="absolute -top-10 scale-0 group-hover:scale-100 bg-slate-900 text-white text-[10px] font-bold py-1 px-2.5 rounded shadow-lg whitespace-nowrap mb-1 transition-all z-[3] pointer-events-none">
-                        {data.label}: ${data.value.toFixed(1)}
-                      </div>
+              {/* Date range filter */}
+              <div className="flex flex-wrap items-center gap-2 mb-4">
+                {([7, 30, 90] as const).map((days) => (
+                  <button
+                    key={days}
+                    type="button"
+                    onClick={() => onStatsRangeChange({ days })}
+                    className={`px-3 py-1.5 text-[10px] font-bold rounded-lg border transition-colors cursor-pointer ${
+                      isPresetActive(days)
+                        ? 'bg-indigo-600 text-white border-indigo-600'
+                        : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300'
+                    }`}
+                  >
+                    {days} days
+                  </button>
+                ))}
+                <span className="text-slate-300 hidden sm:inline">|</span>
+                <input
+                  type="date"
+                  value={customFrom}
+                  onChange={(e) => setCustomFrom(e.target.value)}
+                  className="text-[10px] px-2 py-1.5 border border-slate-200 rounded-lg"
+                />
+                <span className="text-[10px] text-slate-400">to</span>
+                <input
+                  type="date"
+                  value={customTo}
+                  onChange={(e) => setCustomTo(e.target.value)}
+                  className="text-[10px] px-2 py-1.5 border border-slate-200 rounded-lg"
+                />
+                <button
+                  type="button"
+                  onClick={applyCustomRange}
+                  disabled={!customFrom || !customTo || customFrom > customTo}
+                  className="px-3 py-1.5 text-[10px] font-bold rounded-lg bg-slate-800 text-white hover:bg-slate-900 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+                >
+                  Apply
+                </button>
+              </div>
 
-                      {/* Bar fill */}
-                      <div 
-                        style={{ height: `${Math.max(8, percentageHeight)}%` }}
-                        className="w-full bg-slate-200 hover:bg-indigo-600 rounded-t-sm transition-all duration-500 cursor-pointer ease-out relative overflow-hidden"
-                      >
+              {revenueChartData.length === 0 ? (
+                <div className="h-48 flex items-center justify-center text-xs text-slate-400 italic">No revenue data for this period</div>
+              ) : (
+              <div className="flex gap-1" id="analyst-chart">
+                {/* Y-axis */}
+                <div className="flex flex-col justify-between text-[9px] text-slate-400 pr-1 shrink-0" style={{ height: CHART_BAR_MAX_PX + 28 }}>
+                  <span>${maxChartVal.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                  <span>${(maxChartVal / 2).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                  <span>$0</span>
+                </div>
+
+                <div className="flex-1 flex items-end gap-1 sm:gap-2 overflow-x-auto pb-1">
+                {revenueChartData.map((data, index) => {
+                  const barPx = data.value > 0
+                    ? Math.max(6, (data.value / maxChartVal) * CHART_BAR_MAX_PX)
+                    : 2;
+                  return (
+                    <div key={data.date ?? index} className="flex flex-col items-center gap-1 shrink-0" style={{ minWidth: revenueChartData.length > 14 ? 28 : 36, flex: revenueChartData.length <= 14 ? 1 : undefined }}>
+                      <div className="relative w-full flex flex-col items-center justify-end group" style={{ height: CHART_BAR_MAX_PX }}>
+                        <div className="absolute -top-7 scale-0 group-hover:scale-100 bg-slate-900 text-white text-[10px] font-bold py-1 px-2 rounded shadow-lg whitespace-nowrap z-10 pointer-events-none transition-transform">
+                          {data.label}: ${data.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                        </div>
+                        <div
+                          style={{ height: barPx }}
+                          className={`w-full max-w-[40px] rounded-t-md transition-all duration-300 ${
+                            data.value > 0
+                              ? 'bg-indigo-500 hover:bg-indigo-600 cursor-pointer'
+                              : 'bg-slate-100'
+                          }`}
+                          title={`${data.label}: $${data.value.toFixed(2)}`}
+                        />
                       </div>
-                      
-                      {/* Label */}
-                      <span className="text-[10px] text-slate-500 font-semibold mt-2">{data.label}</span>
+                      <span className="text-[8px] sm:text-[9px] text-slate-500 font-medium text-center leading-tight w-full truncate px-0.5">
+                        {revenueChartData.length > 14 ? data.shortLabel : data.label}
+                      </span>
                     </div>
                   );
                 })}
+                </div>
               </div>
               )}
             </div>

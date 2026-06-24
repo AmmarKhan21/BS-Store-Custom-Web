@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Navigate } from 'react-router-dom';
-import { Product, Order, Coupon, StoreStats, AdminCustomer } from './types';
+import { Product, Order, Coupon, StoreStats, AdminCustomer, StatsDateRange } from './types';
 import { CATEGORIES } from './mockData';
 import AdminPortal from './components/AdminPortal';
 import AdminLogin from './components/AdminLogin';
@@ -16,12 +16,38 @@ export default function AdminApp() {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [categories, setCategories] = useState<string[]>(CATEGORIES);
   const [stats, setStats] = useState<StoreStats | null>(null);
+  const [statsRange, setStatsRange] = useState<StatsDateRange>({ days: 7 });
   const [customers, setCustomers] = useState<AdminCustomer[]>([]);
   const [toastMessage, setToastMessage] = useState('');
 
   const triggerToast = (message: string) => {
     setToastMessage(message);
     setTimeout(() => setToastMessage(''), 3000);
+  };
+
+  const buildStatsUrl = (range: StatsDateRange) => {
+    const params = new URLSearchParams();
+    if (range.from && range.to) {
+      params.set('from', range.from);
+      params.set('to', range.to);
+    } else {
+      params.set('days', String(range.days ?? 7));
+    }
+    return `/api/stats?${params}`;
+  };
+
+  const loadStats = async (range: StatsDateRange = statsRange) => {
+    try {
+      const statsRes = await adminFetch(buildStatsUrl(range));
+      if (statsRes.ok) setStats(await statsRes.json());
+    } catch (err) {
+      console.error('Failed to load stats:', err);
+    }
+  };
+
+  const handleStatsRangeChange = (range: StatsDateRange) => {
+    setStatsRange(range);
+    loadStats(range);
   };
 
   const loadAdminData = async () => {
@@ -31,7 +57,7 @@ export default function AdminApp() {
         adminFetch('/api/orders'),
         adminFetch('/api/coupons'),
         adminFetch('/api/categories'),
-        adminFetch('/api/stats'),
+        adminFetch(buildStatsUrl(statsRange)),
         adminFetch('/api/admin/customers'),
       ]);
 
@@ -403,6 +429,8 @@ export default function AdminApp() {
           onUpdateCategory={handleMerchantUpdateCategory}
           stats={stats}
           customers={customers}
+          statsRange={statsRange}
+          onStatsRangeChange={handleStatsRangeChange}
           onUpdateOrderTracking={handleUpdateOrderTracking}
           onUploadImage={handleUploadImage}
         />

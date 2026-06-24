@@ -977,15 +977,35 @@ export async function deleteCoupon(code: string): Promise<any> {
   return { code: normalized, success: true };
 }
 
-export async function getStats(): Promise<any> {
+export async function getStats(opts?: { days?: number; from?: string; to?: string }): Promise<any> {
   const orders = await getAllOrders();
   const products = await getAllProducts();
-  const nonCancelled = orders.filter((o) => o.status !== "Cancelled");
   const lowStockThreshold = Number(process.env.LOW_STOCK_THRESHOLD || 5);
+
+  const toDate = opts?.from && opts?.to
+    ? new Date(`${opts.to}T23:59:59`)
+    : (() => { const d = new Date(); d.setHours(23, 59, 59, 999); return d; })();
+
+  const fromDate = opts?.from && opts?.to
+    ? new Date(`${opts.from}T00:00:00`)
+    : (() => {
+        const days = opts?.days ?? 7;
+        const d = new Date();
+        d.setDate(d.getDate() - (days - 1));
+        d.setHours(0, 0, 0, 0);
+        return d;
+      })();
+
+  const inRange = (orderDate: string) => {
+    const d = new Date(orderDate);
+    return d >= fromDate && d <= toDate;
+  };
+
+  const nonCancelled = orders.filter((o) => o.status !== "Cancelled" && inRange(o.date));
 
   const totalSales = nonCancelled.reduce((sum, o) => sum + o.total, 0);
   const totalOrders = nonCancelled.length;
-  const averageOrderValue = totalOrders > 0 ? (totalSales / totalOrders) : 0;
+  const averageOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
 
   const revenueMap: Record<string, number> = {};
   nonCancelled.forEach((o) => {
@@ -993,10 +1013,23 @@ export async function getStats(): Promise<any> {
     revenueMap[day] = (revenueMap[day] || 0) + o.total;
   });
 
-  const revenueByDays = Object.entries(revenueMap)
-    .map(([date, amount]) => ({ date, amount }))
-    .sort((a, b) => a.date.localeCompare(b.date))
-    .slice(-7);
+  const toDateKey = (d: Date) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
+
+  const revenueByDays: { date: string; amount: number }[] = [];
+  const cursor = new Date(fromDate);
+  cursor.setHours(12, 0, 0, 0);
+  const endCursor = new Date(toDate);
+  endCursor.setHours(12, 0, 0, 0);
+  while (cursor <= endCursor) {
+    const key = toDateKey(cursor);
+    revenueByDays.push({ date: key, amount: revenueMap[key] || 0 });
+    cursor.setDate(cursor.getDate() + 1);
+  }
 
   const categorySalesMap: Record<string, { count: number; revenue: number }> = {};
 
@@ -1030,6 +1063,7 @@ export async function getStats(): Promise<any> {
     outOfStockCount,
     lowStockCount: lowStockProducts.length,
     lowStockProducts,
+    dateRange: { from: toDateKey(fromDate), to: toDateKey(toDate) },
   };
 }
 
