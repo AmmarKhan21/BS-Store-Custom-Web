@@ -26,7 +26,11 @@ import {
   Edit3,
   FolderOpen,
   Users,
-  X
+  X,
+  Mail,
+  Phone,
+  MapPin,
+  ExternalLink
 } from 'lucide-react';
 
 interface AdminPortalProps {
@@ -126,6 +130,7 @@ export default function AdminPortal({
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
   const [isLowStockPanelOpen, setIsLowStockPanelOpen] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 
   const CHART_BAR_MAX_PX = 140;
   const LOW_STOCK_THRESHOLD = 5;
@@ -384,6 +389,29 @@ export default function AdminPortal({
              order.id.toLowerCase().includes(orderQuery.toLowerCase()) ||
              order.city.toLowerCase().includes(orderQuery.toLowerCase())
   );
+
+  const selectedOrderDetail = selectedOrderId
+    ? orders.find((o) => o.id === selectedOrderId) ?? null
+    : null;
+
+  const linkedCustomer = selectedOrderDetail?.customerId
+    ? customers.find((c) => c.id === selectedOrderDetail.customerId)
+    : undefined;
+
+  const openOrderDetail = (order: Order) => {
+    setSelectedOrderId(order.id);
+    setTrackingDrafts((d) => ({
+      ...d,
+      [order.id]: d[order.id] ?? order.trackingNumber ?? '',
+    }));
+  };
+
+  const closeOrderDetail = () => setSelectedOrderId(null);
+
+  const goToOrdersTab = () => {
+    closeOrderDetail();
+    navigate('/admin/orders');
+  };
 
   return (
     <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden" id="admin-panel-container">
@@ -791,8 +819,20 @@ export default function AdminPortal({
                     </tr>
                   ) : (
                   filteredDashboardOrders.slice(0, 5).map((ord) => (
-                    <tr key={ord.id} className="hover:bg-indigo-50/10 transition-colors">
-                      <td className="py-3.5 px-4 font-mono font-bold text-indigo-600">{ord.id}</td>
+                    <tr
+                      key={ord.id}
+                      onClick={() => openOrderDetail(ord)}
+                      className="hover:bg-indigo-50/40 transition-colors cursor-pointer"
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          openOrderDetail(ord);
+                        }
+                      }}
+                    >
+                      <td className="py-3.5 px-4 font-mono font-bold text-indigo-600 underline-offset-2 hover:underline">{ord.id}</td>
                       <td className="py-3.5 px-4 text-slate-500">
                         {new Date(ord.date).toLocaleDateString()}
                       </td>
@@ -813,6 +853,17 @@ export default function AdminPortal({
                 </tbody>
               </table>
             </div>
+            {filteredDashboardOrders.length > 0 && (
+              <div className="mt-3 flex justify-end">
+                <button
+                  type="button"
+                  onClick={goToOrdersTab}
+                  className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 cursor-pointer"
+                >
+                  View all orders →
+                </button>
+              </div>
+            )}
           </div>
 
         </div>
@@ -1577,6 +1628,248 @@ export default function AdminPortal({
 
           </div>
 
+        </div>
+      )}
+
+      {selectedOrderDetail && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
+          onClick={closeOrderDetail}
+        >
+          <div
+            className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="order-detail-title"
+          >
+            <div className="flex items-start justify-between gap-4 p-5 border-b border-slate-100 shrink-0">
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Order details</p>
+                <h3 id="order-detail-title" className="font-display font-bold text-lg text-slate-900 font-mono">
+                  {selectedOrderDetail.id}
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  {new Date(selectedOrderDetail.date).toLocaleString()}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={goToOrdersTab}
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-2 text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-lg hover:bg-indigo-100 cursor-pointer"
+                >
+                  <ExternalLink size={12} /> Open in Orders
+                </button>
+                <button
+                  type="button"
+                  onClick={closeOrderDetail}
+                  className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 cursor-pointer"
+                  aria-label="Close"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            <div className="overflow-y-auto flex-1 p-5 space-y-5">
+              <div className="flex flex-wrap items-center gap-2">
+                {getStatusBadge(selectedOrderDetail.status)}
+                <span className={`text-[10px] font-bold uppercase px-2.5 py-1 rounded ${
+                  selectedOrderDetail.paymentStatus === 'Paid'
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+                    : 'bg-amber-50 text-amber-700 border border-amber-100'
+                }`}>
+                  Payment: {selectedOrderDetail.paymentStatus}
+                </span>
+                <span className={`text-[10px] font-bold uppercase px-2.5 py-1 rounded ${
+                  selectedOrderDetail.paymentMethod !== 'COD'
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+                    : 'bg-slate-100 text-slate-700 border border-slate-200'
+                }`}>
+                  {selectedOrderDetail.paymentMethod}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Customer</h4>
+                  <div className="space-y-2 text-sm">
+                    <p className="font-bold text-slate-900 flex items-center gap-2">
+                      <Users size={14} className="text-indigo-600 shrink-0" />
+                      {selectedOrderDetail.customerName}
+                    </p>
+                    <p className="text-slate-600 flex items-center gap-2 break-all">
+                      <Mail size={14} className="text-slate-400 shrink-0" />
+                      {selectedOrderDetail.customerEmail}
+                    </p>
+                    <p className="text-slate-600 flex items-center gap-2">
+                      <Phone size={14} className="text-slate-400 shrink-0" />
+                      {selectedOrderDetail.customerPhone || '—'}
+                    </p>
+                    {linkedCustomer && (
+                      <div className="pt-2 border-t border-slate-200 text-[11px] text-slate-600 space-y-1">
+                        <p className="font-bold text-indigo-700">Registered account</p>
+                        <p>Member since {new Date(linkedCustomer.createdAt).toLocaleDateString()}</p>
+                        <p>{linkedCustomer.orderCount} orders · {formatMoney(linkedCustomer.totalSpent)} lifetime</p>
+                        <p>{linkedCustomer.isVerified ? '✓ Email verified' : 'Email not verified'}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Shipping address</h4>
+                  <div className="text-sm text-slate-700 space-y-1">
+                    <p className="font-semibold text-slate-900 flex items-start gap-2">
+                      <MapPin size={14} className="text-indigo-600 shrink-0 mt-0.5" />
+                      <span>{selectedOrderDetail.shippingAddress}</span>
+                    </p>
+                    <p className="pl-6">{selectedOrderDetail.city}, {selectedOrderDetail.postalCode}</p>
+                    {selectedOrderDetail.notes && (
+                      <p className="pl-6 text-[11px] text-indigo-900 bg-indigo-50/60 p-2 rounded border border-indigo-100 mt-2">
+                        <strong>Note:</strong> {selectedOrderDetail.notes}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="border border-slate-200 rounded-xl overflow-hidden">
+                <div className="px-4 py-3 bg-slate-50 border-b border-slate-200">
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Items ordered</h4>
+                </div>
+                <div className="divide-y divide-slate-100">
+                  {selectedOrderDetail.items.map((item, index) => (
+                    <div key={index} className="flex gap-3 items-center p-4">
+                      <img
+                        src={item.image}
+                        alt=""
+                        className="w-12 h-12 object-cover rounded-lg border border-slate-200 bg-white shrink-0"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-sm text-slate-900">{item.productName}</p>
+                        <p className="text-[10px] text-slate-500 mt-0.5">
+                          Qty {item.quantity}
+                          {item.selectedSize ? ` · Size ${item.selectedSize}` : ''}
+                          {item.selectedColor ? (
+                            <>
+                              {' · '}
+                              <span
+                                className="inline-block w-2.5 h-2.5 rounded-full border border-slate-300 align-middle"
+                                style={{ backgroundColor: item.selectedColor }}
+                              />
+                            </>
+                          ) : null}
+                        </p>
+                      </div>
+                      <p className="font-bold text-sm text-slate-900 shrink-0">
+                        {formatMoney(item.price * item.quantity)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-4 border border-slate-200 rounded-xl space-y-3">
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Update status</h4>
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase">Dispatch status</label>
+                    <select
+                      value={selectedOrderDetail.status}
+                      onChange={(e) => onUpdateOrderStatus(selectedOrderDetail.id, e.target.value as Order['status'])}
+                      className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-semibold focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+                    >
+                      <option value="Pending">Pending</option>
+                      <option value="Processing">Processing</option>
+                      <option value="Shipped">Shipped</option>
+                      <option value="Delivered">Delivered</option>
+                      <option value="Cancelled">Cancelled</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase">Payment status</label>
+                    <select
+                      value={selectedOrderDetail.paymentStatus}
+                      onChange={(e) => onUpdateOrderPaymentStatus(selectedOrderDetail.id, e.target.value as Order['paymentStatus'])}
+                      className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-semibold focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+                    >
+                      <option value="Pending">Pending</option>
+                      <option value="Paid">Paid</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="p-4 border border-slate-200 rounded-xl space-y-3">
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Order total</h4>
+                  <div className="text-sm space-y-1.5">
+                    <div className="flex justify-between text-slate-600">
+                      <span>Subtotal</span>
+                      <span>{formatMoney(selectedOrderDetail.subtotal)}</span>
+                    </div>
+                    {selectedOrderDetail.discount > 0 && (
+                      <div className="flex justify-between text-red-600">
+                        <span>Discount</span>
+                        <span>-{formatMoney(selectedOrderDetail.discount)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between font-bold text-slate-900 text-base pt-2 border-t border-slate-200">
+                      <span>Total</span>
+                      <span className="text-indigo-700">{formatMoney(selectedOrderDetail.total)}</span>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-slate-100 space-y-2">
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1">
+                      <Truck size={12} /> Tracking number
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Enter tracking ID"
+                        value={trackingDrafts[selectedOrderDetail.id] ?? selectedOrderDetail.trackingNumber ?? ''}
+                        onChange={(e) => setTrackingDrafts((d) => ({ ...d, [selectedOrderDetail.id]: e.target.value }))}
+                        className="flex-1 p-2 text-xs border border-slate-300 rounded-lg"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => onUpdateOrderTracking(
+                          selectedOrderDetail.id,
+                          trackingDrafts[selectedOrderDetail.id] ?? selectedOrderDetail.trackingNumber ?? ''
+                        )}
+                        className="px-3 py-2 text-[10px] font-bold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 cursor-pointer whitespace-nowrap"
+                      >
+                        Save
+                      </button>
+                    </div>
+                    {selectedOrderDetail.trackingNumber && (
+                      <p className="text-[10px] text-slate-500">
+                        Current: <span className="font-mono font-bold text-slate-700">{selectedOrderDetail.trackingNumber}</span>
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-slate-100 flex flex-wrap justify-between gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={goToOrdersTab}
+                className="sm:hidden flex items-center gap-1.5 px-3 py-2 text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-lg cursor-pointer"
+              >
+                <ExternalLink size={12} /> Open in Orders
+              </button>
+              <button
+                type="button"
+                onClick={closeOrderDetail}
+                className="ml-auto px-4 py-2 text-xs font-bold bg-slate-800 text-white rounded-lg hover:bg-slate-900 cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
