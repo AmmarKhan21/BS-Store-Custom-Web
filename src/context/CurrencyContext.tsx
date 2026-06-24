@@ -14,22 +14,23 @@ interface CurrencyContextType {
 
 const CurrencyContext = createContext<CurrencyContextType | null>(null);
 
-export function CurrencyProvider({ children }: { children: ReactNode }) {
-  const [currency, setCurrencyState] = useState<Currency>('USD');
-  const [country, setCountry] = useState('US');
+export function CurrencyProvider({ children, autoDetectOnly = false }: { children: ReactNode; autoDetectOnly?: boolean }) {
+  const [currency, setCurrencyState] = useState<Currency>('PKR');
+  const [country, setCountry] = useState('PK');
   const [exchangeRate, setExchangeRate] = useState(280);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    detectRegion().then((r) => {
+    detectRegion({ respectStored: !autoDetectOnly }).then((r) => {
       setCurrencyState(r.currency);
       setCountry(r.country);
       setExchangeRate(r.exchangeRate);
       setLoading(false);
     });
-  }, []);
+  }, [autoDetectOnly]);
 
   const setCurrency = (c: Currency) => {
+    if (autoDetectOnly) return;
     setCurrencyState(c);
     setStoredCurrency(c);
   };

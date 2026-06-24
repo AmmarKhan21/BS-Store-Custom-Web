@@ -162,7 +162,7 @@ app.get("/api/region", (req, res) => {
   const country =
     (req.headers["cf-ipcountry"] as string) ||
     (req.query.country as string) ||
-    "US";
+    "PK";
   const currency = detectCurrencyFromCountry(country);
   res.json({
     country: country.toUpperCase(),

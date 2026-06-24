@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Product, Order, Coupon, StoreStats, AdminCustomer, StatsDateRange } from '../types';
+import { Currency } from '../lib/currency';
+import { ADMIN_TAB_PATHS, adminTabFromPath } from '../lib/adminRoutes';
 import { 
   BarChart, 
   TrendingUp, 
@@ -22,7 +25,8 @@ import {
   AlertCircle,
   Edit3,
   FolderOpen,
-  Users
+  Users,
+  X
 } from 'lucide-react';
 
 interface AdminPortalProps {
@@ -47,6 +51,8 @@ interface AdminPortalProps {
   onStatsRangeChange: (range: StatsDateRange) => void;
   onUpdateOrderTracking: (orderId: string, trackingNumber: string) => void;
   onUploadImage: (file: File) => Promise<string | null>;
+  adminCurrency: Currency;
+  formatAdminPrice: (usdAmount: number) => string;
 }
 
 export default function AdminPortal({
@@ -71,8 +77,17 @@ export default function AdminPortal({
   onStatsRangeChange,
   onUpdateOrderTracking,
   onUploadImage,
+  adminCurrency,
+  formatAdminPrice,
 }: AdminPortalProps) {
-  const [activeSubTab, setActiveSubTab] = useState<'dashboard' | 'products' | 'orders' | 'coupons' | 'customers'>('dashboard');
+  const location = useLocation();
+  const navigate = useNavigate();
+  const activeSubTab = adminTabFromPath(location.pathname);
+
+  const tabClass = (tab: keyof typeof ADMIN_TAB_PATHS) =>
+    `px-4 py-2 rounded-md transition-all cursor-pointer whitespace-nowrap ${
+      activeSubTab === tab ? 'bg-indigo-650 text-white' : 'text-slate-300 hover:text-white'
+    }`;
 
   // Add Product Form States
   const [newProductName, setNewProductName] = useState('');
@@ -108,8 +123,14 @@ export default function AdminPortal({
   const [trackingDrafts, setTrackingDrafts] = useState<Record<string, string>>({});
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
+  const [isLowStockPanelOpen, setIsLowStockPanelOpen] = useState(false);
 
   const CHART_BAR_MAX_PX = 140;
+  const LOW_STOCK_THRESHOLD = 5;
+
+  const inventoryAlertProducts = products
+    .filter((p) => p.stock <= LOW_STOCK_THRESHOLD)
+    .sort((a, b) => a.stock - b.stock);
 
   // Customer Orders Filters
   const [orderQuery, setOrderQuery] = useState('');
@@ -172,6 +193,29 @@ export default function AdminPortal({
       e.target.value = '';
     }
   };
+
+  const openProductEdit = (p: Product) => {
+    setEditingProduct(p);
+    setNewProductName(p.name);
+    setNewProductCategory(p.category);
+    setNewProductPrice(p.price.toString());
+    setNewProductOrigPrice(p.originalPrice ? p.originalPrice.toString() : '');
+    setNewProductImg(p.images[0] || '');
+    setNewProductStock(p.stock.toString());
+    setNewProductDesc(p.description);
+    setNewProductSizes(p.sizes ? p.sizes.join(', ') : '');
+    setNewProductColors(p.colors ? p.colors.join(', ') : '');
+    setIsLowStockPanelOpen(false);
+    navigate('/admin/products');
+    setIsAddFormOpen(true);
+    setIsCategoryMgrOpen(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const formatMoney = (amount: number) =>
+    adminCurrency === 'PKR'
+      ? `Rs. ${amount.toLocaleString('en-PK')}`
+      : `$${amount.toFixed(2)}`;
 
   const handleCreateProduct = (e: React.FormEvent) => {
     e.preventDefault();
@@ -293,46 +337,21 @@ export default function AdminPortal({
 
         {/* Dynamic sub navigation controls */}
         <div className="flex bg-slate-800 p-1 rounded-lg border border-slate-700 w-full md:w-auto overflow-x-auto text-xs font-semibold">
-          <button
-            onClick={() => setActiveSubTab('dashboard')}
-            className={`px-4 py-2 rounded-md transition-all cursor-pointer whitespace-nowrap ${
-              activeSubTab === 'dashboard' ? 'bg-indigo-650 text-white' : 'text-slate-300 hover:text-white'
-            }`}
-          >
+          <Link to={ADMIN_TAB_PATHS.dashboard} className={tabClass('dashboard')}>
             Store Stats & Overview
-          </button>
-          <button
-            onClick={() => setActiveSubTab('products')}
-            className={`px-4 py-2 rounded-md transition-all cursor-pointer whitespace-nowrap ${
-              activeSubTab === 'products' ? 'bg-indigo-650 text-white' : 'text-slate-300 hover:text-white'
-            }`}
-          >
+          </Link>
+          <Link to={ADMIN_TAB_PATHS.products} className={tabClass('products')}>
             Manage Products ({activeProducts})
-          </button>
-          <button
-            onClick={() => setActiveSubTab('orders')}
-            className={`px-4 py-2 rounded-md transition-all cursor-pointer whitespace-nowrap ${
-              activeSubTab === 'orders' ? 'bg-indigo-650 text-white' : 'text-slate-300 hover:text-white'
-            }`}
-          >
+          </Link>
+          <Link to={ADMIN_TAB_PATHS.orders} className={tabClass('orders')}>
             Manage Orders ({orders.length})
-          </button>
-          <button
-            onClick={() => setActiveSubTab('customers')}
-            className={`px-4 py-2 rounded-md transition-all cursor-pointer whitespace-nowrap ${
-              activeSubTab === 'customers' ? 'bg-indigo-650 text-white' : 'text-slate-300 hover:text-white'
-            }`}
-          >
+          </Link>
+          <Link to={ADMIN_TAB_PATHS.customers} className={tabClass('customers')}>
             Customers ({customers.length})
-          </button>
-          <button
-            onClick={() => setActiveSubTab('coupons')}
-            className={`px-4 py-2 rounded-md transition-all cursor-pointer whitespace-nowrap ${
-              activeSubTab === 'coupons' ? 'bg-indigo-650 text-white' : 'text-slate-300 hover:text-white'
-            }`}
-          >
+          </Link>
+          <Link to={ADMIN_TAB_PATHS.coupons} className={tabClass('coupons')}>
             Discount Coupons
-          </button>
+          </Link>
         </div>
       </div>
 
@@ -347,7 +366,7 @@ export default function AdminPortal({
             <div className="p-5 bg-slate-50 border border-slate-200 rounded-xl relative overflow-hidden group hover:border-indigo-400/50 transition-colors">
               <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest block">Accumulated Net Revenue</span>
               <div className="flex items-baseline gap-2 mt-1.5">
-                <span className="text-2xl font-bold text-slate-900">${totalSales.toFixed(2)}</span>
+                <span className="text-2xl font-bold text-slate-900">{formatMoney(totalSales)}</span>
                 <span className="text-[10px] text-indigo-600 font-bold px-1.5 py-0.2 bg-indigo-50 rounded">Live</span>
               </div>
               <p className="text-[10px] text-slate-400 mt-2 font-sans">For selected date range</p>
@@ -373,7 +392,7 @@ export default function AdminPortal({
             <div className="p-5 bg-slate-50 border border-slate-200 rounded-xl relative overflow-hidden group hover:border-indigo-400/50 transition-colors">
               <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest block">Avg Transaction Size</span>
               <div className="flex items-baseline gap-2 mt-1.5">
-                <span className="text-2xl font-bold text-slate-900">${averageOrderValue.toFixed(2)}</span>
+                <span className="text-2xl font-bold text-slate-900">{formatMoney(averageOrderValue)}</span>
               </div>
               <p className="text-[10px] text-slate-400 mt-2">Dynamic checkouts average ratio</p>
               <div className="absolute right-4 bottom-4 text-indigo-900/10 group-hover:scale-105 transition-transform">
@@ -382,35 +401,135 @@ export default function AdminPortal({
             </div>
 
             {/* KPI 4: Alert status out-of-stock count */}
-            <div className="p-5 bg-slate-50 border border-slate-200 rounded-xl relative overflow-hidden group hover:border-indigo-400/50 transition-colors">
+            <button
+              type="button"
+              onClick={() => setIsLowStockPanelOpen(true)}
+              className="p-5 bg-slate-50 border border-slate-200 rounded-xl relative overflow-hidden group hover:border-amber-400 hover:bg-amber-50/30 transition-colors text-left w-full cursor-pointer"
+            >
               <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest block">Low Stock Alerts</span>
               <div className="flex items-baseline gap-2 mt-1.5">
-                <span className={`text-2xl font-bold ${lowStockProducts.length > 0 ? 'text-amber-600' : 'text-slate-900'}`}>
-                  {lowStockProducts.length} Items
+                <span className={`text-2xl font-bold ${inventoryAlertProducts.length > 0 ? 'text-amber-600' : 'text-slate-900'}`}>
+                  {inventoryAlertProducts.length} Items
                 </span>
                 {outOfStockCount > 0 && (
                   <span className="text-[10px] text-red-600 font-bold px-1.5 py-0.2 bg-red-50 rounded">{outOfStockCount} out</span>
                 )}
               </div>
-              <p className="text-[10px] text-slate-400 mt-2">{outOfStockCount} completely out of stock</p>
+              <p className="text-[10px] text-slate-400 mt-2">
+                {outOfStockCount} completely out of stock · Click to manage
+              </p>
               <div className="absolute right-4 bottom-4 text-indigo-900/10 group-hover:scale-105 transition-transform">
                 <Package size={40} className="stroke-[1.5]" />
               </div>
-            </div>
+            </button>
 
           </div>
 
-          {lowStockProducts.length > 0 && (
-            <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
+          {(lowStockProducts.length > 0 || outOfStockCount > 0) && (
+            <button
+              type="button"
+              onClick={() => setIsLowStockPanelOpen(true)}
+              className="w-full p-4 bg-amber-50 border border-amber-200 rounded-xl text-left hover:bg-amber-100/60 transition-colors cursor-pointer"
+            >
               <h3 className="text-xs font-bold text-amber-900 uppercase tracking-wider mb-2 flex items-center gap-2">
-                <AlertCircle size={14} /> Low stock — reorder soon
+                <AlertCircle size={14} /> Low stock — click to view & edit inventory
               </h3>
               <div className="flex flex-wrap gap-2">
-                {lowStockProducts.map((p) => (
+                {inventoryAlertProducts.slice(0, 6).map((p) => (
                   <span key={p.id} className="text-[10px] font-semibold bg-white border border-amber-200 text-amber-900 px-2.5 py-1 rounded-lg">
-                    {p.name} ({p.stock} left)
+                    {p.name} ({p.stock <= 0 ? 'OUT' : `${p.stock} left`})
                   </span>
                 ))}
+                {inventoryAlertProducts.length > 6 && (
+                  <span className="text-[10px] font-bold text-amber-700">+{inventoryAlertProducts.length - 6} more</span>
+                )}
+              </div>
+            </button>
+          )}
+
+          {isLowStockPanelOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col">
+                <div className="flex items-center justify-between p-5 border-b border-slate-100">
+                  <div>
+                    <h3 className="font-display font-bold text-slate-900">Inventory Alerts</h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Products with {LOW_STOCK_THRESHOLD} or fewer units — update stock or edit details
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsLowStockPanelOpen(false)}
+                    className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 cursor-pointer"
+                    aria-label="Close"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+
+                <div className="overflow-y-auto flex-1 p-4">
+                  {inventoryAlertProducts.length === 0 ? (
+                    <p className="text-center text-sm text-slate-500 py-12">All products are well stocked</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {inventoryAlertProducts.map((p) => (
+                        <div
+                          key={p.id}
+                          className={`flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-xl border ${
+                            p.stock <= 0 ? 'bg-red-50 border-red-200' : 'bg-amber-50 border-amber-200'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <img src={p.images[0]} alt="" className="w-14 h-14 rounded-lg object-cover border border-slate-200 shrink-0" />
+                            <div className="min-w-0">
+                              <p className="font-bold text-sm text-slate-900 truncate">{p.name}</p>
+                              <p className="text-[10px] text-slate-500">{p.category} · {formatAdminPrice(p.price)}</p>
+                              <span className={`inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                p.stock <= 0 ? 'bg-red-200 text-red-800' : 'bg-amber-200 text-amber-900'
+                              }`}>
+                                {p.stock <= 0 ? 'Out of stock' : `Low stock — ${p.stock} left`}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <label className="text-[10px] font-bold text-slate-500 uppercase">Stock</label>
+                            <input
+                              type="number"
+                              min={0}
+                              value={p.stock}
+                              onChange={(e) => onUpdateProductStock(p.id, parseInt(e.target.value) || 0)}
+                              className="w-20 px-2 py-1.5 text-sm font-bold border border-slate-300 rounded-lg text-center"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => openProductEdit(p)}
+                              className="px-3 py-1.5 text-[10px] font-bold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 cursor-pointer flex items-center gap-1"
+                            >
+                              <Edit3 size={12} /> Edit
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="p-4 border-t border-slate-100 flex justify-between items-center">
+                  <button
+                    type="button"
+                    onClick={() => { setIsLowStockPanelOpen(false); navigate('/admin/products'); }}
+                    className="text-xs font-bold text-indigo-600 hover:text-indigo-800 cursor-pointer"
+                  >
+                    Go to all products →
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsLowStockPanelOpen(false)}
+                    className="px-4 py-2 text-xs font-bold bg-slate-800 text-white rounded-lg cursor-pointer"
+                  >
+                    Done
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -430,7 +549,7 @@ export default function AdminPortal({
                   </p>
                 </div>
                 <div className="text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded border border-indigo-100 whitespace-nowrap">
-                  Total: ${chartTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  Total: {formatMoney(chartTotal)}
                 </div>
               </div>
 
@@ -480,9 +599,9 @@ export default function AdminPortal({
               <div className="flex gap-1" id="analyst-chart">
                 {/* Y-axis */}
                 <div className="flex flex-col justify-between text-[9px] text-slate-400 pr-1 shrink-0" style={{ height: CHART_BAR_MAX_PX + 28 }}>
-                  <span>${maxChartVal.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-                  <span>${(maxChartVal / 2).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-                  <span>$0</span>
+                  <span>{adminCurrency === 'PKR' ? `Rs. ${maxChartVal.toLocaleString()}` : `$${maxChartVal.toFixed(0)}`}</span>
+                  <span>{adminCurrency === 'PKR' ? `Rs. ${Math.round(maxChartVal / 2).toLocaleString()}` : `$${(maxChartVal / 2).toFixed(0)}`}</span>
+                  <span>{adminCurrency === 'PKR' ? 'Rs. 0' : '$0'}</span>
                 </div>
 
                 <div className="flex-1 flex items-end gap-1 sm:gap-2 overflow-x-auto pb-1">
@@ -494,7 +613,7 @@ export default function AdminPortal({
                     <div key={data.date ?? index} className="flex flex-col items-center gap-1 shrink-0" style={{ minWidth: revenueChartData.length > 14 ? 28 : 36, flex: revenueChartData.length <= 14 ? 1 : undefined }}>
                       <div className="relative w-full flex flex-col items-center justify-end group" style={{ height: CHART_BAR_MAX_PX }}>
                         <div className="absolute -top-7 scale-0 group-hover:scale-100 bg-slate-900 text-white text-[10px] font-bold py-1 px-2 rounded shadow-lg whitespace-nowrap z-10 pointer-events-none transition-transform">
-                          {data.label}: ${data.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                          {data.label}: {formatMoney(data.value)}
                         </div>
                         <div
                           style={{ height: barPx }}
@@ -503,7 +622,7 @@ export default function AdminPortal({
                               ? 'bg-indigo-500 hover:bg-indigo-600 cursor-pointer'
                               : 'bg-slate-100'
                           }`}
-                          title={`${data.label}: $${data.value.toFixed(2)}`}
+                          title={`${data.label}: ${formatMoney(data.value)}`}
                         />
                       </div>
                       <span className="text-[8px] sm:text-[9px] text-slate-500 font-medium text-center leading-tight w-full truncate px-0.5">
@@ -533,7 +652,7 @@ export default function AdminPortal({
                       <div className="flex justify-between font-medium text-slate-700">
                         <span>{cat.category}</span>
                         <span className="font-bold text-slate-900">
-                          {cat.count} sold · ${cat.revenue.toFixed(0)}
+                          {cat.count} sold · {formatMoney(cat.revenue)}
                         </span>
                       </div>
                       <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
@@ -600,7 +719,7 @@ export default function AdminPortal({
                         </span>
                       </td>
                       <td className="py-3.5 px-4">{getStatusBadge(ord.status)}</td>
-                      <td className="py-3.5 px-4 text-right font-bold text-slate-900">${ord.total.toFixed(2)}</td>
+                      <td className="py-3.5 px-4 text-right font-bold text-slate-900">{formatMoney(ord.total)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -973,9 +1092,9 @@ export default function AdminPortal({
                     {/* Price figures */}
                     <td className="py-3 px-4">
                       <div className="flex flex-col text-xs font-semibold">
-                        <span className="text-slate-900 font-bold">${p.price.toFixed(2)}</span>
+                        <span className="text-slate-900 font-bold">{formatAdminPrice(p.price)}</span>
                         {p.originalPrice && (
-                          <span className="text-[10px] text-slate-400 line-through">${p.originalPrice.toFixed(2)}</span>
+                          <span className="text-[10px] text-slate-400 line-through">{formatAdminPrice(p.originalPrice)}</span>
                         )}
                       </div>
                     </td>
@@ -1002,22 +1121,7 @@ export default function AdminPortal({
                       <div className="flex items-center justify-center gap-0.5">
                         <button
                           type="button"
-                          onClick={() => {
-                            setEditingProduct(p);
-                            setNewProductName(p.name);
-                            setNewProductCategory(p.category);
-                            setNewProductPrice(p.price.toString());
-                            setNewProductOrigPrice(p.originalPrice ? p.originalPrice.toString() : '');
-                            setNewProductImg(p.images[0] || '');
-                            setNewProductStock(p.stock.toString());
-                            setNewProductDesc(p.description);
-                            setNewProductSizes(p.sizes ? p.sizes.join(', ') : '');
-                            setNewProductColors(p.colors ? p.colors.join(', ') : '');
-                            
-                            setIsAddFormOpen(true);
-                            setIsCategoryMgrOpen(false);
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                          }}
+                          onClick={() => openProductEdit(p)}
                           className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-slate-55 rounded transition-all cursor-pointer"
                           title="Edit product parameters"
                         >
@@ -1145,7 +1249,7 @@ export default function AdminPortal({
                               Qty: {item.quantity} • Size: {item.selectedSize || 'Standard'} • Color: {item.selectedColor ? <span style={{ backgroundColor: item.selectedColor }} className="w-2.5 h-2.5 rounded-full inline-block border text-[0]" /> : 'Auto'}
                             </p>
                           </div>
-                          <span className="font-bold text-slate-900">${(item.price * item.quantity).toFixed(2)}</span>
+                          <span className="font-bold text-slate-900">{formatMoney(item.price * item.quantity)}</span>
                         </div>
                       ))}
                     </div>
@@ -1167,17 +1271,17 @@ export default function AdminPortal({
                       <div className="pt-2 border-t border-slate-200 text-slate-800 space-y-1">
                         <div className="flex justify-between">
                           <span className="text-slate-500">Subtotal Amount:</span>
-                          <span className="font-medium">${ord.subtotal.toFixed(2)}</span>
+                          <span className="font-medium">{formatMoney(ord.subtotal)}</span>
                         </div>
                         {ord.discount > 0 && (
                           <div className="flex justify-between text-red-650 font-medium">
                             <span>Coupon Discount:</span>
-                            <span>-${ord.discount.toFixed(2)}</span>
+                            <span>-{formatMoney(ord.discount)}</span>
                           </div>
                         )}
                         <div className="flex justify-between font-bold text-slate-900 pt-1 text-sm">
                           <span>Total Amount:</span>
-                          <span className="text-indigo-700 font-black font-display text-base">${ord.total.toFixed(2)}</span>
+                          <span className="text-indigo-700 font-black font-display text-base">{formatMoney(ord.total)}</span>
                         </div>
                       </div>
 
@@ -1249,7 +1353,7 @@ export default function AdminPortal({
                         </span>
                       </td>
                       <td className="py-3 px-4 text-center font-bold">{c.orderCount}</td>
-                      <td className="py-3 px-4 text-right font-bold text-indigo-700">${c.totalSpent.toFixed(2)}</td>
+                      <td className="py-3 px-4 text-right font-bold text-indigo-700">{formatMoney(c.totalSpent)}</td>
                       <td className="py-3 px-4 text-slate-500">{new Date(c.createdAt).toLocaleDateString()}</td>
                     </tr>
                   ))}

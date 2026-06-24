@@ -16,7 +16,7 @@ import ContactPage from './pages/ContactPage';
 
 export default function App() {
   return (
-    <CurrencyProvider>
+    <CurrencyProvider autoDetectOnly>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<StoreApp />} />
@@ -30,8 +30,8 @@ export default function App() {
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/order/success" element={<OrderSuccessPage />} />
           <Route path="/order/failed" element={<OrderFailedPage />} />
-          <Route path="/admin" element={<AdminApp />} />
           <Route path="/admin/login" element={<AdminApp />} />
+          <Route path="/admin/*" element={<AdminApp />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>

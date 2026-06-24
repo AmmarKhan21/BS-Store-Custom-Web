@@ -21,12 +21,11 @@ import {
   SlidersHorizontal,
   X,
   RotateCcw,
-  User,
-  Globe
+  User
 } from 'lucide-react';
 
 export default function StoreApp() {
-  const { currency, setCurrency, format, country } = useCurrency();
+  const { currency, format, country } = useCurrency();
   usePageMeta({
     title: 'Shop',
     description: 'Bismillah Cotton & Sports Hub — premium cotton fabrics, clothing & sports wear. COD, PayFast & JazzCash.',
@@ -367,15 +366,6 @@ export default function StoreApp() {
 
         {/* Cart Trigger Badge */}
         <div className="flex items-center gap-3.5">
-          <button
-            onClick={() => setCurrency(currency === 'PKR' ? 'USD' : 'PKR')}
-            className="hidden sm:flex items-center gap-1.5 text-[10px] font-bold text-slate-600 bg-slate-50 border border-slate-200 px-2.5 py-1.5 rounded-lg cursor-pointer"
-            title="Switch currency"
-          >
-            <Globe size={12} />
-            {currency} {country === 'PK' ? '🇵🇰' : '🌐'}
-          </button>
-
           {customerName ? (
             <Link to="/account" className="text-xs font-bold text-indigo-700 hover:text-indigo-900 flex items-center gap-1">
               <User size={14} /> {customerName.split(' ')[0]}

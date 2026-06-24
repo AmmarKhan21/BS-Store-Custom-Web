@@ -31,8 +31,9 @@ export function getCurrencySymbol(currency: Currency): string {
   return currency === 'PKR' ? 'Rs.' : '$';
 }
 
-export async function detectRegion(): Promise<{ country: string; currency: Currency; exchangeRate: number }> {
-  const stored = getStoredCurrency();
+export async function detectRegion(options?: { respectStored?: boolean }): Promise<{ country: string; currency: Currency; exchangeRate: number }> {
+  const respectStored = options?.respectStored ?? true;
+  const stored = respectStored ? getStoredCurrency() : null;
   if (stored) {
     const res = await fetch('/api/region');
     const data = await res.json();
@@ -43,8 +44,10 @@ export async function detectRegion(): Promise<{ country: string; currency: Curre
     const res = await fetch('/api/region');
     const data = await res.json();
     const currency = data.currency as Currency;
-    setStoredCurrency(currency);
-    setStoredCountry(data.country);
+    if (respectStored) {
+      setStoredCurrency(currency);
+      setStoredCountry(data.country);
+    }
     return { country: data.country, currency, exchangeRate: data.exchangeRate };
   } catch {
     const fallback: Currency = Intl.DateTimeFormat().resolvedOptions().timeZone?.includes('Karachi') ? 'PKR' : 'USD';

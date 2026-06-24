@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { Product, Order, Coupon, StoreStats, AdminCustomer, StatsDateRange } from './types';
+import { Currency, convertFromUsd } from './lib/currency';
 import { CATEGORIES } from './mockData';
 import AdminPortal from './components/AdminPortal';
 import AdminLogin from './components/AdminLogin';
 import { adminFetch, verifyAdminSession, logoutAdmin, getAdminToken } from './lib/auth';
+import { isAdminDashboardPath } from './lib/adminRoutes';
 import { Sparkles, LogOut, Store } from 'lucide-react';
 
 export default function AdminApp() {
@@ -17,6 +19,11 @@ export default function AdminApp() {
   const [categories, setCategories] = useState<string[]>(CATEGORIES);
   const [stats, setStats] = useState<StoreStats | null>(null);
   const [statsRange, setStatsRange] = useState<StatsDateRange>({ days: 7 });
+  const [adminCurrency, setAdminCurrency] = useState<Currency>(() => {
+    const saved = localStorage.getItem('bismillah_admin_currency');
+    return saved === 'USD' ? 'USD' : 'PKR';
+  });
+  const [exchangeRate, setExchangeRate] = useState(280);
   const [customers, setCustomers] = useState<AdminCustomer[]>([]);
   const [toastMessage, setToastMessage] = useState('');
 
@@ -24,6 +31,28 @@ export default function AdminApp() {
     setToastMessage(message);
     setTimeout(() => setToastMessage(''), 3000);
   };
+
+  useEffect(() => {
+    fetch('/api/region')
+      .then((r) => r.json())
+      .then((d) => setExchangeRate(d.exchangeRate ?? 280))
+      .catch(() => {});
+  }, []);
+
+  const handleAdminCurrencyChange = (c: Currency) => {
+    setAdminCurrency(c);
+    localStorage.setItem('bismillah_admin_currency', c);
+  };
+
+  const formatAdminPrice = useCallback(
+    (usdAmount: number) => {
+      const amount = convertFromUsd(usdAmount, adminCurrency, exchangeRate);
+      return adminCurrency === 'PKR'
+        ? `Rs. ${amount.toLocaleString('en-PK')}`
+        : `$${amount.toFixed(2)}`;
+    },
+    [adminCurrency, exchangeRate]
+  );
 
   const buildStatsUrl = (range: StatsDateRange) => {
     const params = new URLSearchParams();
@@ -350,21 +379,33 @@ export default function AdminApp() {
   }
 
   if (!isAuthenticated) {
-    if (location.pathname === '/admin') {
-      return <Navigate to="/admin/login" replace />;
+    if (location.pathname.startsWith('/admin') && location.pathname !== '/admin/login') {
+      return <Navigate to="/admin/login" replace state={{ from: location.pathname }} />;
     }
     return (
       <AdminLogin
         onSuccess={() => {
           setIsAuthenticated(true);
           loadAdminData();
-          navigate('/admin', { replace: true });
+          const redirectTo =
+            typeof location.state === 'object' &&
+            location.state !== null &&
+            'from' in location.state &&
+            typeof (location.state as { from?: string }).from === 'string' &&
+            isAdminDashboardPath((location.state as { from: string }).from)
+              ? (location.state as { from: string }).from
+              : '/admin';
+          navigate(redirectTo, { replace: true });
         }}
       />
     );
   }
 
   if (location.pathname === '/admin/login') {
+    return <Navigate to="/admin" replace />;
+  }
+
+  if (location.pathname.startsWith('/admin') && !isAdminDashboardPath(location.pathname)) {
     return <Navigate to="/admin" replace />;
   }
 
@@ -393,6 +434,15 @@ export default function AdminApp() {
         </div>
 
         <div className="flex items-center gap-2">
+          <select
+            value={adminCurrency}
+            onChange={(e) => handleAdminCurrencyChange(e.target.value as Currency)}
+            className="text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200 px-2.5 py-2 rounded-xl cursor-pointer"
+            title="Display currency"
+          >
+            <option value="PKR">PKR (Rs.)</option>
+            <option value="USD">USD ($)</option>
+          </select>
           <a
             href="/"
             className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-600 hover:text-indigo-700 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors"
@@ -433,6 +483,8 @@ export default function AdminApp() {
           onStatsRangeChange={handleStatsRangeChange}
           onUpdateOrderTracking={handleUpdateOrderTracking}
           onUploadImage={handleUploadImage}
+          adminCurrency={adminCurrency}
+          formatAdminPrice={formatAdminPrice}
         />
       </main>
     </div>
