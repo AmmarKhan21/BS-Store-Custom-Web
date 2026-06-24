@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express from "express";
 import path from "path";
 import cors from "cors";
@@ -17,6 +18,7 @@ import {
   updateOrderStatus,
   getCoupons,
   addCoupon,
+  deleteCoupon,
   getStats
 } from "./dbService";
 
@@ -49,7 +51,7 @@ app.get("/api/products", async (req, res) => {
       search as string,
       sort as string
     );
-    console.log("productsList",productsList)
+    // console.log("productsList",productsList)
     res.json(productsList);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -117,7 +119,7 @@ app.post("/api/products/:id/reviews", async (req, res) => {
 app.post("/api/orders", async (req, res) => {
   try {
     const result = await addOrder(req.body);
-    res.status(251).json({ success: true, orderId: result.id, total: result.total });
+    res.status(201).json({ success: true, orderId: result.id, total: result.total });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -160,6 +162,17 @@ app.post("/api/coupons", async (req, res) => {
   try {
     const codeObj = await addCoupon(req.body);
     res.json({ success: true, code: codeObj.code });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DEACTIVATE PROMO COUPON FROM ADMIN TERMINAL
+app.delete("/api/coupons/:code", async (req, res) => {
+  try {
+    const { code } = req.params;
+    await deleteCoupon(code);
+    res.json({ success: true, code });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

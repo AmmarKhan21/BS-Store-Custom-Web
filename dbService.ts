@@ -679,7 +679,67 @@ export async function addReview(productId: string, r: any): Promise<any> {
   return { id, success: true };
 }
 
+async function getCouponByCode(code: string): Promise<any | null> {
+  const normalized = code.toUpperCase();
+
+  if (isSupabaseAvailable) {
+    try {
+      const prisma = getPrisma();
+      const coupon = await prisma.coupon.findUnique({ where: { code: normalized } });
+      if (!coupon) return null;
+      return { ...coupon, isActive: coupon.isActive === 1 };
+    } catch (err: any) {
+      console.error("Prisma getCouponByCode failed, falling back to local database. Error:", err.message);
+      isSupabaseAvailable = false;
+    }
+  }
+
+  const db = readJsonDb();
+  const coupon = db.coupons.find((c) => c.code === normalized);
+  if (!coupon) return null;
+  return { ...coupon, isActive: coupon.isActive === 1 };
+}
+
+function calculateCouponDiscount(coupon: any, subtotal: number): number {
+  if (coupon.discountType === "percentage") {
+    return (subtotal * coupon.value) / 100;
+  }
+  return coupon.value;
+}
+
 export async function addOrder(o: any): Promise<any> {
+  for (const item of o.items) {
+    const product = await getProduct(item.productId);
+    if (!product) {
+      throw new Error(`Product "${item.productName || item.productId}" is no longer available.`);
+    }
+    if (product.stock < Number(item.quantity)) {
+      throw new Error(
+        `Insufficient stock for "${product.name}". Only ${product.stock} left in warehouse.`
+      );
+    }
+  }
+
+  const subtotal = Number(o.subtotal);
+  let discount = Number(o.discount || 0);
+
+  if (o.couponCode) {
+    const coupon = await getCouponByCode(o.couponCode);
+    if (!coupon || !coupon.isActive) {
+      throw new Error(`Coupon "${o.couponCode}" is invalid or expired.`);
+    }
+    if (subtotal < coupon.minPurchase) {
+      throw new Error(`Coupon requires a minimum purchase of $${coupon.minPurchase.toFixed(2)}.`);
+    }
+    discount = calculateCouponDiscount(coupon, subtotal);
+  }
+
+  const deliveryCharge = subtotal >= 100 ? 0 : 5;
+  const expectedTotal = Math.max(0, subtotal - discount) + deliveryCharge;
+  if (Math.abs(expectedTotal - Number(o.total)) > 0.01) {
+    throw new Error("Order total mismatch. Please refresh your cart and try again.");
+  }
+
   const id = "ORD-" + Math.floor(1000 + Math.random() * 9000);
   const date = new Date().toISOString();
   const paymentStatus = o.paymentMethod === "CARD" ? "Paid" : "Pending";
@@ -698,9 +758,9 @@ export async function addOrder(o: any): Promise<any> {
           city: o.city,
           postalCode: o.postalCode,
           items: JSON.stringify(o.items),
-          subtotal: Number(o.subtotal),
-          discount: Number(o.discount || 0),
-          total: Number(o.total),
+          subtotal,
+          discount,
+          total: expectedTotal,
           paymentMethod: o.paymentMethod,
           paymentStatus,
           status,
@@ -721,7 +781,7 @@ export async function addOrder(o: any): Promise<any> {
         });
       }
 
-      return { id, total: o.total };
+      return { id, total: expectedTotal };
     } catch (err: any) {
       console.error("Prisma addOrder failed, falling back to local database. Error:", err.message);
       isSupabaseAvailable = false;
@@ -739,9 +799,9 @@ export async function addOrder(o: any): Promise<any> {
     city: o.city,
     postalCode: o.postalCode,
     items: JSON.stringify(o.items),
-    subtotal: Number(o.subtotal),
-    discount: Number(o.discount || 0),
-    total: Number(o.total),
+    subtotal,
+    discount,
+    total: expectedTotal,
     paymentMethod: o.paymentMethod,
     paymentStatus,
     status,
@@ -759,7 +819,7 @@ export async function addOrder(o: any): Promise<any> {
   });
 
   writeJsonDb(db);
-  return { id, total: o.total };
+  return { id, total: expectedTotal };
 }
 
 export async function getAllOrders(): Promise<any[]> {
@@ -870,6 +930,31 @@ export async function addCoupon(c: any): Promise<any> {
   db.coupons.push(newCoupon);
   writeJsonDb(db);
   return { code: c.code, success: true };
+}
+
+export async function deleteCoupon(code: string): Promise<any> {
+  const normalized = code.toUpperCase();
+
+  if (isSupabaseAvailable) {
+    try {
+      const prisma = getPrisma();
+      return await prisma.coupon.update({
+        where: { code: normalized },
+        data: { isActive: 0 }
+      });
+    } catch (err: any) {
+      console.error("Prisma deleteCoupon failed, falling back to local database. Error:", err.message);
+      isSupabaseAvailable = false;
+    }
+  }
+
+  const db = readJsonDb();
+  const idx = db.coupons.findIndex((c) => c.code === normalized);
+  if (idx !== -1) {
+    db.coupons[idx].isActive = 0;
+    writeJsonDb(db);
+  }
+  return { code: normalized, success: true };
 }
 
 export async function getStats(): Promise<any> {

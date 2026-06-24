@@ -6,7 +6,7 @@ interface CheckoutWizardProps {
   cartItems: CartItem[];
   appliedCoupon: Coupon | null;
   onClose: () => void;
-  onSubmitOrder: (order: Order) => void;
+  onSubmitOrder: (order: Order, couponCode?: string) => Promise<{ success: boolean; orderId?: string; error?: string }>;
 }
 
 export default function CheckoutWizard({ cartItems, appliedCoupon, onClose, onSubmitOrder }: CheckoutWizardProps) {
@@ -38,15 +38,36 @@ export default function CheckoutWizard({ cartItems, appliedCoupon, onClose, onSu
   
   let discountAmount = 0;
   if (appliedCoupon) {
-    if (appliedCoupon.discountType === 'percentage') {
-      discountAmount = (subtotal * appliedCoupon.value) / 100;
-    } else {
-      discountAmount = appliedCoupon.value;
+    if (appliedCoupon.isActive && subtotal >= appliedCoupon.minPurchase) {
+      if (appliedCoupon.discountType === 'percentage') {
+        discountAmount = (subtotal * appliedCoupon.value) / 100;
+      } else {
+        discountAmount = appliedCoupon.value;
+      }
     }
   }
 
   const deliveryCharge = subtotal >= 100 ? 0 : 5;
   const finalTotal = Math.max(0, subtotal - discountAmount) + deliveryCharge;
+
+  const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+
+  const isShippingComplete =
+    shippingName.trim().length >= 2 &&
+    isValidEmail(shippingEmail) &&
+    shippingPhone.trim().length >= 10 &&
+    shippingAddress.trim().length >= 5 &&
+    shippingPostal.trim().length >= 4;
+
+  const isCardComplete =
+    cardName.trim().length >= 2 &&
+    cardNumber.length === 16 &&
+    cardExpiry.length === 4 &&
+    cardCVV.length === 3;
+
+  const canProceedToPayment = isShippingComplete;
+  const canPlaceOrder =
+    paymentMethod === 'COD' ? true : isCardComplete;
 
   const handleProceedToPayment = (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,7 +80,7 @@ export default function CheckoutWizard({ cartItems, appliedCoupon, onClose, onSu
     setStep(2);
   };
 
-  const handlePlaceOrder = (e: React.FormEvent) => {
+  const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (paymentMethod === 'CARD') {
       if (cardNumber.length < 16 || cardExpiry.length < 4 || cardCVV.length < 3 || !cardName.trim()) {
@@ -69,44 +90,60 @@ export default function CheckoutWizard({ cartItems, appliedCoupon, onClose, onSu
       }
     }
 
+    if (appliedCoupon) {
+      if (!appliedCoupon.isActive) {
+        setCheckoutError('The applied coupon is no longer active. Please remove it and try again.');
+        setTimeout(() => setCheckoutError(''), 4050);
+        return;
+      }
+      if (subtotal < appliedCoupon.minPurchase) {
+        setCheckoutError(`Coupon requires a minimum purchase of $${appliedCoupon.minPurchase.toFixed(2)}.`);
+        setTimeout(() => setCheckoutError(''), 4050);
+        return;
+      }
+    }
+
     setCheckoutError('');
     setIsProcessing(true);
 
-    // Simulate standard card processing speed
-    setTimeout(() => {
-      const generatedId = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
-      const newOrder: Order = {
-        id: generatedId,
-        customerName: shippingName,
-        customerEmail: shippingEmail,
-        customerPhone: shippingPhone,
-        shippingAddress: shippingAddress,
-        city: shippingCity,
-        postalCode: shippingPostal,
-        items: cartItems.map(item => ({
-          productId: item.product.id,
-          productName: item.product.name,
-          price: item.product.price,
-          quantity: item.quantity,
-          selectedSize: item.selectedSize,
-          selectedColor: item.selectedColor,
-          image: item.product.images[0]
-        })),
-        subtotal,
-        discount: discountAmount,
-        total: finalTotal,
-        paymentMethod,
-        paymentStatus: paymentMethod === 'CARD' ? 'Paid' : 'Pending',
-        status: 'Pending',
-        date: new Date().toISOString(),
-        notes: orderNotes
-      };
+    const orderPayload: Order = {
+      id: '',
+      customerName: shippingName,
+      customerEmail: shippingEmail,
+      customerPhone: shippingPhone,
+      shippingAddress: shippingAddress,
+      city: shippingCity,
+      postalCode: shippingPostal,
+      items: cartItems.map(item => ({
+        productId: item.product.id,
+        productName: item.product.name,
+        price: item.product.price,
+        quantity: item.quantity,
+        selectedSize: item.selectedSize,
+        selectedColor: item.selectedColor,
+        image: item.product.images[0]
+      })),
+      subtotal,
+      discount: discountAmount,
+      total: finalTotal,
+      paymentMethod,
+      paymentStatus: paymentMethod === 'CARD' ? 'Paid' : 'Pending',
+      status: 'Pending',
+      date: new Date().toISOString(),
+      notes: orderNotes
+    };
 
-      setCreatedOrder(newOrder);
-      setIsProcessing(false);
+    const result = await onSubmitOrder(orderPayload, appliedCoupon?.code);
+
+    setIsProcessing(false);
+
+    if (result.success && result.orderId) {
+      setCreatedOrder({ ...orderPayload, id: result.orderId });
       setStep(3);
-      onSubmitOrder(newOrder);
-    }, 2000);
+    } else {
+      setCheckoutError(result.error || 'Failed to place order. Please try again.');
+      setTimeout(() => setCheckoutError(''), 5000);
+    }
   };
 
   return (
@@ -132,19 +169,19 @@ export default function CheckoutWizard({ cartItems, appliedCoupon, onClose, onSu
           {/* Progress Indicators */}
           <div className="flex items-center gap-2 text-xs font-semibold shrink-0">
             <span className={`w-6 h-6 rounded-full flex items-center justify-center border ${
-              step >= 1 ? 'bg-indigo-650 text-white border-indigo-600' : 'bg-white text-slate-400 border-slate-200'
+              step >= 1 ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-400 border-slate-200'
             }`}>
               1
             </span>
             <span className="w-6 h-0.5 bg-slate-200" />
             <span className={`w-6 h-6 rounded-full flex items-center justify-center border ${
-              step >= 2 ? 'bg-indigo-650 text-white border-indigo-600' : 'bg-white text-slate-400 border-slate-200'
+              step >= 2 ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-400 border-slate-200'
             }`}>
               2
             </span>
             <span className="w-6 h-0.5 bg-slate-200" />
             <span className={`w-6 h-6 rounded-full flex items-center justify-center border ${
-              step === 3 ? 'bg-indigo-650 text-white border-indigo-600' : 'bg-white text-slate-400 border-slate-200'
+              step === 3 ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-400 border-slate-200'
             }`}>
               3
             </span>
@@ -279,21 +316,32 @@ export default function CheckoutWizard({ cartItems, appliedCoupon, onClose, onSu
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-slate-150 flex justify-between gap-4">
+                <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row justify-between gap-3">
                   <button
                     type="button"
                     onClick={onClose}
-                    className="px-5 py-3 border border-slate-200 hover:border-slate-400 text-slate-700 text-xs font-semibold rounded-lg uppercase tracking-wider cursor-pointer"
+                    className="px-5 py-3 border border-slate-300 hover:border-slate-400 text-slate-700 text-xs font-semibold rounded-lg uppercase tracking-wider cursor-pointer bg-white"
                   >
-                    Ca                  </button>
+                    Cancel
+                  </button>
                   <button
                     type="submit"
-                    className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg uppercase tracking-wider flex items-center gap-1.5 cursor-pointer hover:shadow-md transition-colors"
+                    disabled={!canProceedToPayment}
+                    className={`px-6 py-3 text-xs font-bold rounded-lg uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all ${
+                      canProceedToPayment
+                        ? 'bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer shadow-md hover:shadow-lg'
+                        : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                    }`}
                   >
-                    <span>Proceed to Payment Select</span>
+                    <span>Proceed to Payment</span>
                     <ArrowRight size={13} />
                   </button>
                 </div>
+                {!canProceedToPayment && (
+                  <p className="text-[10px] text-slate-400 text-right">
+                    Fill all required fields to continue
+                  </p>
+                )}
               </form>
             )}
 
@@ -306,54 +354,84 @@ export default function CheckoutWizard({ cartItems, appliedCoupon, onClose, onSu
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Option: Cash on Delivery */}
-                  <div
+                  <button
+                    type="button"
                     onClick={() => setPaymentMethod('COD')}
-                    className={`p-4 border rounded-xl cursor-pointer flex flex-col justify-between transition-all ${
+                    className={`p-4 border-2 rounded-xl text-left flex flex-col justify-between transition-all ${
                       paymentMethod === 'COD'
-                        ? 'border-indigo-600 bg-indigo-50/20 shadow-xs ring-1 ring-indigo-500'
-                        : 'border-slate-200 bg-white hover:bg-slate-50'
+                        ? 'border-indigo-600 bg-indigo-50 shadow-md ring-2 ring-indigo-200'
+                        : 'border-slate-200 bg-white hover:border-indigo-300 hover:bg-slate-50'
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="p-2.5 bg-white border border-slate-300 rounded-lg text-slate-800">
-                        <Truck size={20} />
+                    <div className="flex items-start gap-3 w-full">
+                      <div className={`p-2.5 rounded-lg shrink-0 ${
+                        paymentMethod === 'COD'
+                          ? 'bg-indigo-600 text-white'
+                          : 'bg-slate-100 text-slate-600 border border-slate-200'
+                      }`}>
+                        <Truck size={22} />
                       </div>
-                      <div>
-                        <h4 className="font-bold text-xs text-slate-900">Cash on Delivery (COD)</h4>
-                        <p className="text-[10px] text-slate-500">Pay cash upon parcel dropoff at your door.</p>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <h4 className={`font-bold text-sm ${
+                            paymentMethod === 'COD' ? 'text-indigo-900' : 'text-slate-900'
+                          }`}>
+                            Cash on Delivery
+                          </h4>
+                          <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                            paymentMethod === 'COD'
+                              ? 'border-indigo-600 bg-indigo-600'
+                              : 'border-slate-300 bg-white'
+                          }`}>
+                            {paymentMethod === 'COD' && <Check size={12} className="text-white" />}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-600 mt-1">Pay cash when your order arrives at your door.</p>
+                        <p className="text-[10px] font-semibold text-emerald-700 mt-2">No upfront payment required</p>
                       </div>
                     </div>
-                    {paymentMethod === 'COD' && (
-                      <div className="mt-3 text-[10px] text-indigo-900 font-semibold bg-indigo-100/60 px-2 py-1 rounded self-start flex items-center gap-1">
-                        <Check size={10} /> Active COD select
-                      </div>
-                    )}
-                  </div>
+                  </button>
 
-                  {/* Option: Credit Card Secure gateway */}
-                  <div
+                  {/* Option: Credit Card */}
+                  <button
+                    type="button"
                     onClick={() => setPaymentMethod('CARD')}
-                    className={`p-4 border rounded-xl cursor-pointer flex flex-col justify-between transition-all ${
+                    className={`p-4 border-2 rounded-xl text-left flex flex-col justify-between transition-all ${
                       paymentMethod === 'CARD'
-                        ? 'border-indigo-600 bg-indigo-50/20 shadow-xs ring-1 ring-indigo-500'
-                        : 'border-slate-200 bg-white hover:bg-slate-50'
+                        ? 'border-indigo-600 bg-indigo-50 shadow-md ring-2 ring-indigo-200'
+                        : 'border-slate-200 bg-white hover:border-indigo-300 hover:bg-slate-50'
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="p-2.5 bg-white border border-slate-305 rounded-lg text-slate-800">
-                        <CreditCard size={20} />
+                    <div className="flex items-start gap-3 w-full">
+                      <div className={`p-2.5 rounded-lg shrink-0 ${
+                        paymentMethod === 'CARD'
+                          ? 'bg-indigo-600 text-white'
+                          : 'bg-slate-100 text-slate-600 border border-slate-200'
+                      }`}>
+                        <CreditCard size={22} />
                       </div>
-                      <div>
-                        <h4 className="font-bold text-xs text-slate-900">Online Card Gateway</h4>
-                        <p className="text-[10px] text-slate-500">Supports Secure Visa, Master & UnionPay.</p>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <h4 className={`font-bold text-sm ${
+                            paymentMethod === 'CARD' ? 'text-indigo-900' : 'text-slate-900'
+                          }`}>
+                            Online Card Payment
+                          </h4>
+                          <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                            paymentMethod === 'CARD'
+                              ? 'border-indigo-600 bg-indigo-600'
+                              : 'border-slate-300 bg-white'
+                          }`}>
+                            {paymentMethod === 'CARD' && <Check size={12} className="text-white" />}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-600 mt-1">Visa, Mastercard & UnionPay accepted.</p>
+                        <p className="text-[10px] font-semibold text-indigo-700 mt-2 flex items-center gap-1">
+                          <ShieldCheck size={11} /> Secure SSL encrypted
+                        </p>
                       </div>
                     </div>
-                    {paymentMethod === 'CARD' && (
-                      <div className="mt-3 text-[10px] text-indigo-900 font-semibold bg-indigo-100/60 px-2 py-1 rounded self-start flex items-center gap-1">
-                        <Check size={10} /> Active Card select
-                      </div>
-                    )}
-                  </div>
+                  </button>
                 </div>
 
                 {/* Secure Gateway inputs on option CARD selected */}
@@ -429,12 +507,12 @@ export default function CheckoutWizard({ cartItems, appliedCoupon, onClose, onSu
                 )}
 
                 {/* Processing/Submit panels */}
-                <div className="pt-4 border-t border-slate-200 flex justify-between gap-4">
+                <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row justify-between gap-3">
                   <button
                     type="button"
                     disabled={isProcessing}
                     onClick={() => setStep(1)}
-                    className="px-5 py-3 border border-slate-200 hover:border-slate-400 text-slate-700 text-xs font-semibold rounded-lg uppercase tracking-wider cursor-pointer flex items-center gap-1 bg-white"
+                    className="px-5 py-3 border border-slate-300 hover:border-slate-400 text-slate-700 text-xs font-semibold rounded-lg uppercase tracking-wider cursor-pointer flex items-center justify-center gap-1 bg-white disabled:opacity-50"
                   >
                     <ArrowLeft size={13} />
                     <span>Back</span>
@@ -442,22 +520,38 @@ export default function CheckoutWizard({ cartItems, appliedCoupon, onClose, onSu
 
                   <button
                     type="submit"
-                    disabled={isProcessing}
-                    className="px-6 py-3 bg-indigo-650 hover:bg-indigo-705 disabled:bg-slate-200 text-white text-xs font-bold rounded-lg uppercase tracking-wider flex items-center gap-1.5 cursor-pointer hover:shadow-md transition-colors"
+                    disabled={isProcessing || !canPlaceOrder}
+                    className={`px-6 py-3.5 text-sm font-bold rounded-lg uppercase tracking-wide flex items-center justify-center gap-2 min-w-[200px] transition-all ${
+                      isProcessing
+                        ? 'bg-indigo-500 text-white cursor-wait'
+                        : canPlaceOrder
+                          ? 'bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer shadow-lg hover:shadow-xl ring-2 ring-indigo-300'
+                          : 'bg-slate-200 text-slate-500 cursor-not-allowed'
+                    }`}
                   >
                     {isProcessing ? (
                       <>
-                        <Loader2 className="animate-spin" size={13} />
-                        <span>Processing Auth Security...</span>
+                        <Loader2 className="animate-spin" size={16} />
+                        <span>Placing Order...</span>
+                      </>
+                    ) : paymentMethod === 'COD' ? (
+                      <>
+                        <Truck size={16} />
+                        <span>Place Order (COD)</span>
                       </>
                     ) : (
                       <>
-                        <span>Authorize & Place Order</span>
-                        <Check size={13} />
+                        <CreditCard size={16} />
+                        <span>Pay & Place Order</span>
                       </>
                     )}
                   </button>
                 </div>
+                {paymentMethod === 'CARD' && !canPlaceOrder && (
+                  <p className="text-[10px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-right">
+                    Complete all card fields (16-digit number, MMYY expiry, 3-digit CVV, cardholder name)
+                  </p>
+                )}
               </form>
             )}
 

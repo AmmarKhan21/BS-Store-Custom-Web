@@ -86,7 +86,7 @@
       "sizes": "[\"S\",\"M\",\"L\",\"XL\",\"XXL\"]",
       "colors": "[\"#FFFFFF\",\"#000000\",\"#eedbc5\"]",
       "rating": 5,
-      "stock": 30,
+      "stock": 29,
       "isFeatured": 1,
       "dateAdded": "2026-06-24"
     },
@@ -101,7 +101,7 @@
       "sizes": "[\"S\",\"M\",\"L\",\"XL\"]",
       "colors": "[\"#FFFFFF\",\"#000000\",\"#eedbc5\"]",
       "rating": 5,
-      "stock": 2,
+      "stock": 0,
       "isFeatured": 1,
       "dateAdded": "2026-06-24"
     }
@@ -204,6 +204,42 @@
       "status": "Processing",
       "date": "2026-06-21T14:30:00Z",
       "notes": "Please double-check the packing. Gift wrapping requested."
+    },
+    {
+      "id": "ORD-3609",
+      "customerName": "Ammar Younas test",
+      "customerEmail": "ammar.younas@xcorebit.com",
+      "customerPhone": "3244726886",
+      "shippingAddress": "askjdasdqwds",
+      "city": "Lahore",
+      "postalCode": "123213",
+      "items": "[{\"productId\":\"prod-1782281989491\",\"productName\":\"New test trophy\",\"price\":39,\"quantity\":2,\"selectedSize\":\"S\",\"selectedColor\":\"#FFFFFF\",\"image\":\"https://www.trophee-sportif.com/9853-thickbox_default/coupe-or.jpg\"}]",
+      "subtotal": 78,
+      "discount": 0,
+      "total": 83,
+      "paymentMethod": "COD",
+      "paymentStatus": "Pending",
+      "status": "Processing",
+      "date": "2026-06-24T06:25:52.879Z",
+      "notes": "asdsadsadasd"
+    },
+    {
+      "id": "ORD-2782",
+      "customerName": "Test User",
+      "customerEmail": "test@example.com",
+      "customerPhone": "+92 300 1234567",
+      "shippingAddress": "123 Test St",
+      "city": "Lahore",
+      "postalCode": "54000",
+      "items": "[{\"productId\":\"prod-1782281506502\",\"productName\":\"Test\",\"price\":239,\"quantity\":1,\"image\":\"https://example.com/img.jpg\"}]",
+      "subtotal": 239,
+      "discount": 0,
+      "total": 244,
+      "paymentMethod": "COD",
+      "paymentStatus": "Pending",
+      "status": "Pending",
+      "date": "2026-06-24T06:37:09.638Z",
+      "notes": "integration test"
     }
   ]
 }

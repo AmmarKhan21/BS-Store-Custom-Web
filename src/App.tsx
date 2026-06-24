@@ -55,6 +55,7 @@ export default function App() {
         console.log("dbStatusRes",dbStatusRes)
         if (dbStatusRes.ok) {
           const dbData = await dbStatusRes.json();
+          console.log("dbStatusRes 22",dbStatusRes)
           setIsSupabase(dbData.isSupabaseEnabled);
         }
       } catch (err) {
@@ -237,8 +238,11 @@ console.log("First product:", prods);
     }
   };
 
-  // Submit complete order to Express SQLite engine
-  const handleSubmitOrder = async (newOrder: Order) => {
+  // Submit complete order to backend (Supabase/Prisma or local JSON)
+  const handleSubmitOrder = async (
+    newOrder: Order,
+    couponCode?: string
+  ): Promise<{ success: boolean; orderId?: string; error?: string }> => {
     try {
       const response = await fetch("/api/orders", {
         method: "POST",
@@ -255,30 +259,33 @@ console.log("First product:", prods);
           discount: newOrder.discount,
           total: newOrder.total,
           paymentMethod: newOrder.paymentMethod,
-          notes: newOrder.notes
+          notes: newOrder.notes,
+          couponCode
         })
       });
-      
+
       const data = await response.json();
       if (data.success) {
         triggerToast(`Order ${data.orderId} placed successfully! Thank you.`);
-        
-        // Retrieve fresh products and orders
+
         const [prodRes, ordRes] = await Promise.all([
           fetch("/api/products"),
           fetch("/api/orders")
         ]);
-        
+
         setProducts(await prodRes.json());
         setOrders(await ordRes.json());
-        
+
         setCart([]);
         setAppliedCoupon(null);
-        setIsCheckoutOpen(false);
+
+        return { success: true, orderId: data.orderId };
       }
+
+      return { success: false, error: data.error || "Failed to place order." };
     } catch (e) {
       console.error("Order database insertion error:", e);
-      triggerToast("Error: SQLite connection timed out.");
+      return { success: false, error: "Database connection error. Please try again." };
     }
   };
 
@@ -368,12 +375,32 @@ console.log("First product:", prods);
         body: JSON.stringify({ status })
       });
       if (response.ok) {
-        triggerToast(`Order status updated to "${status}" in SQL tables.`);
+        triggerToast(`Order status updated to "${status}".`);
         const ordRes = await fetch("/api/orders");
         setOrders(await ordRes.json());
       }
     } catch (e) {
-      console.error("SQLite order update failure:", e);
+      console.error("Order status update failure:", e);
+    }
+  };
+
+  const handleMerchantUpdateOrderPaymentStatus = async (
+    orderId: string,
+    paymentStatus: Order['paymentStatus']
+  ) => {
+    try {
+      const response = await fetch(`/api/orders/${orderId}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paymentStatus })
+      });
+      if (response.ok) {
+        triggerToast(`Payment status updated to "${paymentStatus}".`);
+        const ordRes = await fetch("/api/orders");
+        setOrders(await ordRes.json());
+      }
+    } catch (e) {
+      console.error("Payment status update failure:", e);
     }
   };
 
@@ -395,9 +422,18 @@ console.log("First product:", prods);
   };
 
   const handleMerchantDeleteCoupon = async (code: string) => {
-    // For local database, since we can just filter it
-    setCoupons((prev) => prev.filter((c) => c.code !== code));
-    triggerToast('Coupon deleted.');
+    try {
+      const response = await fetch(`/api/coupons/${encodeURIComponent(code)}`, {
+        method: "DELETE"
+      });
+      if (response.ok) {
+        triggerToast(`Coupon "${code}" deactivated.`);
+        const coupRes = await fetch("/api/coupons");
+        setCoupons(await coupRes.json());
+      }
+    } catch (e) {
+      console.error("Coupon delete failure:", e);
+    }
   };
 
   const handleMerchantAddCategory = (categoryName: string) => {
@@ -1191,6 +1227,7 @@ console.log("First product:", prods);
             onDeleteProduct={handleMerchantDeleteProduct}
             onUpdateProductStock={handleMerchantUpdateStock}
             onUpdateOrderStatus={handleMerchantUpdateOrderStatus}
+            onUpdateOrderPaymentStatus={handleMerchantUpdateOrderPaymentStatus}
             onAddCoupon={handleMerchantAddCoupon}
             onDeleteCoupon={handleMerchantDeleteCoupon}
             onAddCategory={handleMerchantAddCategory}

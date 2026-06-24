@@ -34,6 +34,7 @@ interface AdminPortalProps {
   onDeleteProduct: (productId: string) => void;
   onUpdateProductStock: (productId: string, newStock: number) => void;
   onUpdateOrderStatus: (orderId: string, status: Order['status']) => void;
+  onUpdateOrderPaymentStatus: (orderId: string, paymentStatus: Order['paymentStatus']) => void;
   onAddCoupon: (coupon: Coupon) => void;
   onDeleteCoupon: (code: string) => void;
   onAddCategory: (categoryName: string) => void;
@@ -51,6 +52,7 @@ export default function AdminPortal({
   onDeleteProduct,
   onUpdateProductStock,
   onUpdateOrderStatus,
+  onUpdateOrderPaymentStatus,
   onAddCoupon,
   onDeleteCoupon,
   onAddCategory,
@@ -949,19 +951,39 @@ export default function AdminPortal({
                     </div>
 
                     {/* Order action status updater dropdown */}
-                    <div className="flex items-center gap-2">
-                      <label className="text-[10px] font-bold text-slate-600 uppercase tracking-zinc-700 font-display">Dispatch Status:</label>
-                      <select
-                        value={ord.status}
-                        onChange={(e) => onUpdateOrderStatus(ord.id, e.target.value as Order['status'])}
-                        className="p-1.5 pr-8 bg-white border border-slate-300 rounded text-xs font-semibold focus:ring-1 focus:ring-indigo-500 cursor-pointer"
-                      >
-                        <option value="Pending">Pending</option>
-                        <option value="Processing">Processing</option>
-                        <option value="Shipped">Shipped</option>
-                        <option value="Delivered">Delivered</option>
-                        <option value="Cancelled">Cancelled</option>
-                      </select>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
+                          ord.paymentMethod === 'CARD'
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+                            : 'bg-indigo-50 text-indigo-700 border border-indigo-100'
+                        }`}>
+                          {ord.paymentMethod === 'CARD' ? 'Card' : 'COD'}
+                        </span>
+                        <label className="text-[10px] font-bold text-slate-600 uppercase tracking-zinc-700 font-display">Dispatch:</label>
+                        <select
+                          value={ord.status}
+                          onChange={(e) => onUpdateOrderStatus(ord.id, e.target.value as Order['status'])}
+                          className="p-1.5 pr-8 bg-white border border-slate-300 rounded text-xs font-semibold focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+                        >
+                          <option value="Pending">Pending</option>
+                          <option value="Processing">Processing</option>
+                          <option value="Shipped">Shipped</option>
+                          <option value="Delivered">Delivered</option>
+                          <option value="Cancelled">Cancelled</option>
+                        </select>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <label className="text-[10px] font-bold text-slate-600 uppercase tracking-zinc-700 font-display">Payment:</label>
+                        <select
+                          value={ord.paymentStatus}
+                          onChange={(e) => onUpdateOrderPaymentStatus(ord.id, e.target.value as Order['paymentStatus'])}
+                          className="p-1.5 pr-8 bg-white border border-slate-300 rounded text-xs font-semibold focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+                        >
+                          <option value="Pending">Pending</option>
+                          <option value="Paid">Paid</option>
+                        </select>
+                      </div>
                     </div>
                   </div>
 
