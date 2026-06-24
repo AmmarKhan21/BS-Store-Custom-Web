@@ -1,7 +1,9 @@
 import "dotenv/config";
 import express from "express";
 import path from "path";
+import fs from "fs";
 import cors from "cors";
+import multer from "multer";
 import { createServer as createViteServer } from "vite";
 import {
   isSupabaseAvailable,
@@ -15,6 +17,7 @@ import {
   addOrder,
   getAllOrders,
   updateOrderStatus,
+  updateOrderTracking,
   getCoupons,
   addCoupon,
   deleteCoupon,
@@ -45,13 +48,17 @@ import {
   verifyOtp,
   getCustomerOrders,
   getOrderById,
-  confirmOrderPayment
+  confirmOrderPayment,
+  getAllCustomersAdmin,
+  getCustomerOrderById
 } from "./customerDb";
 import {
   sendOtpEmail,
   sendOrderConfirmationEmail,
-  sendAdminNewOrderEmail
+  sendAdminNewOrderEmail,
+  sendOrderShippedEmail
 } from "./emailService";
+import { sendWhatsAppOrderAlert, sendWhatsAppCustomerShipped } from "./whatsappService";
 import {
   detectCurrencyFromCountry,
   convertPrice,
@@ -64,10 +71,46 @@ import { createJazzCashCheckout, verifyJazzCashCallback } from "./payments/jazzc
 
 const app = express();
 const PORT = 3000;
+const uploadsDir = path.join(process.cwd(), "uploads");
+
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, uploadsDir),
+    filename: (_req, file, cb) => {
+      const safe = file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_");
+      cb(null, `${Date.now()}-${safe}`);
+    },
+  }),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype.startsWith("image/")) cb(null, true);
+    else cb(new Error("Only image files are allowed"));
+  },
+});
+
+async function notifyNewOrder(order: any) {
+  await sendOrderConfirmationEmail(order);
+  await sendAdminNewOrderEmail(order);
+  await sendWhatsAppOrderAlert({
+    id: order.id,
+    customerName: order.customerName,
+    customerPhone: order.customerPhone,
+    city: order.city,
+    total: order.total,
+    currency: order.currency || "PKR",
+    paymentMethod: order.paymentMethod,
+    items: order.items,
+  });
+}
 
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use("/uploads", express.static(uploadsDir));
 
 // Initialize SQL databases on server startup (Prisma or SQLite Fallback)
 initializeDatabase();
@@ -278,6 +321,61 @@ app.get("/api/account/orders", requireCustomer, async (req, res) => {
   }
 });
 
+app.get("/api/account/orders/:id", requireCustomer, async (req, res) => {
+  try {
+    const customer = await getCustomerById((req as any).customerId);
+    if (!customer) return res.status(404).json({ error: "Not found" });
+    const order = await getCustomerOrderById(customer.id, customer.email, req.params.id);
+    if (!order) return res.status(404).json({ error: "Order not found" });
+    res.json(order);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/* --- ADMIN CUSTOMERS & UPLOAD --- */
+
+app.get("/api/admin/customers", requireAdmin, async (_req, res) => {
+  try {
+    res.json(await getAllCustomersAdmin());
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/upload", requireAdmin, upload.single("image"), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: "No image uploaded" });
+  }
+  const base = process.env.APP_URL || `http://localhost:${PORT}`;
+  res.json({ success: true, url: `${base}/uploads/${req.file.filename}` });
+});
+
+app.put("/api/orders/:id/tracking", requireAdmin, async (req, res) => {
+  try {
+    const { trackingNumber } = req.body ?? {};
+    await updateOrderTracking(req.params.id, trackingNumber || "");
+    const order = await getOrderById(req.params.id);
+    if (order?.trackingNumber && order.customerEmail) {
+      await sendOrderShippedEmail(order);
+      await sendWhatsAppCustomerShipped({
+        id: order.id,
+        customerName: order.customerName,
+        customerPhone: order.customerPhone,
+        city: order.city,
+        total: order.total,
+        currency: order.currency || "PKR",
+        paymentMethod: order.paymentMethod,
+        items: order.items,
+        trackingNumber: order.trackingNumber,
+      });
+    }
+    res.json({ success: true, order });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 /* --- PAYMENTS --- */
 
 app.post("/api/payments/payfast/callback", async (req, res) => {
@@ -288,8 +386,7 @@ app.post("/api/payments/payfast/callback", async (req, res) => {
       await confirmOrderPayment(String(orderId), body.transaction_id || body.TXN_ID);
       const order = await getOrderById(String(orderId));
       if (order) {
-        await sendOrderConfirmationEmail(order);
-        await sendAdminNewOrderEmail(order);
+        await notifyNewOrder(order);
       }
     }
     res.json({ success: true });
@@ -306,8 +403,7 @@ app.post("/api/payments/jazzcash/callback", async (req, res) => {
       await confirmOrderPayment(orderId, body.pp_TxnRefNo);
       const order = await getOrderById(orderId);
       if (order) {
-        await sendOrderConfirmationEmail(order);
-        await sendAdminNewOrderEmail(order);
+        await notifyNewOrder(order);
       }
       return res.redirect(`${process.env.APP_URL || "http://localhost:3000"}/order/success?orderId=${orderId}&gateway=jazzcash`);
     }
@@ -335,8 +431,7 @@ app.post("/api/orders/:id/confirm-payment", async (req, res) => {
       await confirmOrderPayment(req.params.id, req.body?.paymentRef || "confirmed");
       const updated = await getOrderById(req.params.id);
       if (updated) {
-        await sendOrderConfirmationEmail(updated);
-        await sendAdminNewOrderEmail(updated);
+        await notifyNewOrder(updated);
       }
     }
     res.json({ success: true });
@@ -476,8 +571,7 @@ app.post("/api/orders", async (req, res) => {
     }
 
     if (order) {
-      await sendOrderConfirmationEmail(order);
-      await sendAdminNewOrderEmail(order);
+      await notifyNewOrder(order);
     }
 
     res.status(201).json({ success: true, orderId: result.id, total: result.total, currency: result.currency });

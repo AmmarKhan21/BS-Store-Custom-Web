@@ -57,6 +57,18 @@ export interface Order {
   notes?: string;
   currency?: 'PKR' | 'USD';
   customerId?: string;
+  trackingNumber?: string;
+}
+
+export interface AdminCustomer {
+  id: string;
+  email: string;
+  name: string;
+  phone?: string;
+  isVerified: boolean;
+  createdAt: string;
+  orderCount: number;
+  totalSpent: number;
 }
 
 export interface Customer {
@@ -80,4 +92,7 @@ export interface StoreStats {
   averageOrderValue: number;
   revenueByDays: { date: string; amount: number }[];
   categorySales: { category: string; count: number; revenue: number }[];
+  outOfStockCount: number;
+  lowStockCount: number;
+  lowStockProducts: { id: string; name: string; stock: number; category: string }[];
 }

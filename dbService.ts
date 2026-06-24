@@ -979,13 +979,14 @@ export async function deleteCoupon(code: string): Promise<any> {
 
 export async function getStats(): Promise<any> {
   const orders = await getAllOrders();
+  const products = await getAllProducts();
   const nonCancelled = orders.filter((o) => o.status !== "Cancelled");
+  const lowStockThreshold = Number(process.env.LOW_STOCK_THRESHOLD || 5);
 
   const totalSales = nonCancelled.reduce((sum, o) => sum + o.total, 0);
   const totalOrders = nonCancelled.length;
   const averageOrderValue = totalOrders > 0 ? (totalSales / totalOrders) : 0;
 
-  // Revenue by days
   const revenueMap: Record<string, number> = {};
   nonCancelled.forEach((o) => {
     const day = o.date.split("T")[0];
@@ -995,47 +996,64 @@ export async function getStats(): Promise<any> {
   const revenueByDays = Object.entries(revenueMap)
     .map(([date, amount]) => ({ date, amount }))
     .sort((a, b) => a.date.localeCompare(b.date))
-    .slice(-10);
+    .slice(-7);
 
-  // Category sales
-  const categorySalesMap: Record<string, { count: number; revenue: number }> = {
-    'Cotton Collection': { count: 0, revenue: 0 },
-    'Clothing': { count: 0, revenue: 0 },
-    'Sports Wear': { count: 0, revenue: 0 },
-    'Sports Gear': { count: 0, revenue: 0 }
-  };
+  const categorySalesMap: Record<string, { count: number; revenue: number }> = {};
 
   nonCancelled.forEach((o) => {
     o.items.forEach((item: any) => {
-      let categoryName = "Cotton Collection";
-      const nameLower = item.productName.toLowerCase();
-      if (nameLower.includes("polo") || nameLower.includes("shirt")) {
-        categoryName = "Clothing";
-      } else if (nameLower.includes("shoe") || nameLower.includes("hoodie")) {
-        categoryName = "Sports Wear";
-      } else if (nameLower.includes("racket") || nameLower.includes("ball") || nameLower.includes("gear")) {
-        categoryName = "Sports Gear";
-      }
-
+      const product = products.find((p) => p.id === item.productId);
+      const categoryName = product?.category || "Uncategorized";
       if (!categorySalesMap[categoryName]) {
         categorySalesMap[categoryName] = { count: 0, revenue: 0 };
       }
       categorySalesMap[categoryName].count += Number(item.quantity);
-      categorySalesMap[categoryName].revenue += (Number(item.price) * Number(item.quantity));
+      categorySalesMap[categoryName].revenue += Number(item.price) * Number(item.quantity);
     });
   });
 
-  const categorySales = Object.entries(categorySalesMap).map(([category, details]) => ({
-    category,
-    count: details.count,
-    revenue: details.revenue
-  }));
+  const categorySales = Object.entries(categorySalesMap)
+    .map(([category, details]) => ({ category, ...details }))
+    .sort((a, b) => b.revenue - a.revenue);
+
+  const outOfStockCount = products.filter((p) => p.stock <= 0).length;
+  const lowStockProducts = products
+    .filter((p) => p.stock > 0 && p.stock <= lowStockThreshold)
+    .map((p) => ({ id: p.id, name: p.name, stock: p.stock, category: p.category }));
 
   return {
     totalSales,
     totalOrders,
     averageOrderValue,
     revenueByDays,
-    categorySales
+    categorySales,
+    outOfStockCount,
+    lowStockCount: lowStockProducts.length,
+    lowStockProducts,
   };
+}
+
+export async function updateOrderTracking(id: string, trackingNumber: string): Promise<any> {
+  const trimmed = trackingNumber.trim();
+
+  if (isSupabaseAvailable) {
+    try {
+      const prisma = getPrisma();
+      const updateData: any = { trackingNumber: trimmed || null };
+      if (trimmed) updateData.status = "Shipped";
+      return await prisma.order.update({ where: { id }, data: updateData });
+    } catch (err: any) {
+      console.error("Prisma updateOrderTracking failed:", err.message);
+      isSupabaseAvailable = false;
+    }
+  }
+
+  const db = readJsonDb();
+  const idx = db.orders.findIndex((o) => o.id === id);
+  if (idx !== -1) {
+    db.orders[idx].trackingNumber = trimmed || null;
+    if (trimmed) db.orders[idx].status = "Shipped";
+    writeJsonDb(db);
+  }
+  return { id, success: true };
 }

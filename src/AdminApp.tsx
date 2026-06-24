@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Navigate } from 'react-router-dom';
-import { Product, Order, Coupon } from './types';
+import { Product, Order, Coupon, StoreStats, AdminCustomer } from './types';
 import { CATEGORIES } from './mockData';
 import AdminPortal from './components/AdminPortal';
 import AdminLogin from './components/AdminLogin';
-import { adminFetch, verifyAdminSession, logoutAdmin } from './lib/auth';
+import { adminFetch, verifyAdminSession, logoutAdmin, getAdminToken } from './lib/auth';
 import { Sparkles, LogOut, Store } from 'lucide-react';
 
 export default function AdminApp() {
@@ -15,6 +15,8 @@ export default function AdminApp() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [categories, setCategories] = useState<string[]>(CATEGORIES);
+  const [stats, setStats] = useState<StoreStats | null>(null);
+  const [customers, setCustomers] = useState<AdminCustomer[]>([]);
   const [toastMessage, setToastMessage] = useState('');
 
   const triggerToast = (message: string) => {
@@ -24,11 +26,13 @@ export default function AdminApp() {
 
   const loadAdminData = async () => {
     try {
-      const [prodRes, ordRes, coupRes, catRes] = await Promise.all([
+      const [prodRes, ordRes, coupRes, catRes, statsRes, custRes] = await Promise.all([
         adminFetch('/api/products'),
         adminFetch('/api/orders'),
         adminFetch('/api/coupons'),
         adminFetch('/api/categories'),
+        adminFetch('/api/stats'),
+        adminFetch('/api/admin/customers'),
       ]);
 
       if (prodRes.status === 401 || ordRes.status === 401) {
@@ -56,6 +60,8 @@ export default function AdminApp() {
 
       if (Array.isArray(ords)) setOrders(ords);
       if (Array.isArray(coups)) setCoupons(coups);
+      if (statsRes.ok) setStats(await statsRes.json());
+      if (custRes.ok) setCustomers(await custRes.json());
     } catch (err) {
       console.error('Failed to load admin data:', err);
       triggerToast('Unable to load dashboard data.');
@@ -176,6 +182,43 @@ export default function AdminApp() {
     } catch (e) {
       console.error('Payment status update failure:', e);
     }
+  };
+
+  const handleUpdateOrderTracking = async (orderId: string, trackingNumber: string) => {
+    try {
+      const response = await adminFetch(`/api/orders/${orderId}/tracking`, {
+        method: 'PUT',
+        body: JSON.stringify({ trackingNumber }),
+      });
+      if (response.ok) {
+        triggerToast(trackingNumber ? 'Tracking saved — customer notified by email.' : 'Tracking cleared.');
+        const ordRes = await adminFetch('/api/orders');
+        setOrders(await ordRes.json());
+      }
+    } catch (e) {
+      console.error('Tracking update failure:', e);
+    }
+  };
+
+  const handleUploadImage = async (file: File): Promise<string | null> => {
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      const token = getAdminToken();
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+      });
+      if (res.ok) {
+        const data = await res.json();
+        return data.url ?? null;
+      }
+      triggerToast('Image upload failed.');
+    } catch (e) {
+      console.error('Upload failure:', e);
+    }
+    return null;
   };
 
   const handleMerchantAddCoupon = async (newCoupon: Coupon) => {
@@ -358,6 +401,10 @@ export default function AdminApp() {
           onAddCategory={handleMerchantAddCategory}
           onDeleteCategory={handleMerchantDeleteCategory}
           onUpdateCategory={handleMerchantUpdateCategory}
+          stats={stats}
+          customers={customers}
+          onUpdateOrderTracking={handleUpdateOrderTracking}
+          onUploadImage={handleUploadImage}
         />
       </main>
     </div>

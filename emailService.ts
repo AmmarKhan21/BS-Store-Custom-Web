@@ -134,3 +134,21 @@ export async function sendAdminNewOrderEmail(
 
   return sendEmail(ADMIN_ORDER_EMAIL, `New order ${order.id}`, html);
 }
+
+export async function sendOrderShippedEmail(order: {
+  id: string;
+  customerName: string;
+  customerEmail: string;
+  trackingNumber?: string;
+  currency?: string;
+}): Promise<boolean> {
+  const html = `
+    <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:24px">
+      <h2 style="color:#4f46e5">Your order has shipped!</h2>
+      <p>Hi ${order.customerName}, great news — your order <strong>${order.id}</strong> is on its way.</p>
+      ${order.trackingNumber ? `<p><strong>Tracking number:</strong> ${order.trackingNumber}</p>` : ""}
+      <p style="color:#64748b;font-size:14px">Thank you for shopping with Bismillah Cotton & Sports Hub.</p>
+    </div>
+  `;
+  return sendEmail(order.customerEmail, `Order ${order.id} shipped`, html);
+}

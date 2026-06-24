@@ -449,3 +449,71 @@ export async function confirmOrderPayment(orderId: string, paymentRef?: string):
   };
   fs.writeFileSync(dbPath, JSON.stringify(full, null, 2), "utf-8");
 }
+
+export async function getAllCustomersAdmin(): Promise<any[]> {
+  let orders: any[] = [];
+  if (fs.existsSync(dbPath)) {
+    orders = JSON.parse(fs.readFileSync(dbPath, "utf-8")).orders || [];
+  }
+
+  if (isSupabaseAvailable) {
+    try {
+      const prisma = getPrisma();
+      const allOrders = await prisma.order.findMany();
+      const customers = await prisma.customer.findMany({ orderBy: { createdAt: "desc" } });
+      return customers.map((c) => {
+        const customerOrders = allOrders.filter(
+          (o) => o.customerId === c.id || o.customerEmail === c.email
+        );
+        const totalSpent = customerOrders
+          .filter((o) => o.status !== "Cancelled")
+          .reduce((sum, o) => sum + o.total, 0);
+        return {
+          id: c.id,
+          email: c.email,
+          name: c.name,
+          phone: c.phone,
+          isVerified: c.isVerified === 1,
+          createdAt: c.createdAt,
+          orderCount: customerOrders.length,
+          totalSpent,
+        };
+      });
+    } catch {
+      /* fallback */
+    }
+  }
+
+  const extras = readExtras();
+  return (extras.customers || []).map((c: any) => {
+    const customerOrders = orders.filter(
+      (o: any) => o.customerId === c.id || o.customerEmail === c.email
+    );
+    const totalSpent = customerOrders
+      .filter((o: any) => o.status !== "Cancelled")
+      .reduce((sum: number, o: any) => sum + Number(o.total || 0), 0);
+    return {
+      id: c.id,
+      email: c.email,
+      name: c.name,
+      phone: c.phone,
+      isVerified: c.isVerified === 1,
+      createdAt: c.createdAt,
+      orderCount: customerOrders.length,
+      totalSpent,
+    };
+  });
+}
+
+export async function getCustomerOrderById(
+  customerId: string,
+  customerEmail: string,
+  orderId: string
+): Promise<any | null> {
+  const order = await getOrderById(orderId);
+  if (!order) return null;
+  if (order.customerId === customerId || order.customerEmail === customerEmail) {
+    return order;
+  }
+  return null;
+}

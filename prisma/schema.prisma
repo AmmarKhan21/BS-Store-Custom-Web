@@ -94,6 +94,7 @@ model Order {
   date            String
   notes           String?
   paymentRef      String?
+  trackingNumber  String?
   customer        Customer? @relation(fields: [customerId], references: [id])
 
   @@map("orders")

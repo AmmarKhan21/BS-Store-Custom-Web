@@ -4,6 +4,7 @@ import { Product, CartItem, Order, Coupon } from './types';
 import { CATEGORIES } from './mockData';
 import { customerFetch, getCustomerProfile } from './lib/customerAuth';
 import { useCurrency } from './context/CurrencyContext';
+import { usePageMeta } from './hooks/usePageMeta';
 import BannerHero from './components/BannerHero';
 import ProductCard from './components/ProductCard';
 import ProductModal from './components/ProductModal';
@@ -26,6 +27,10 @@ import {
 
 export default function StoreApp() {
   const { currency, setCurrency, format, country } = useCurrency();
+  usePageMeta({
+    title: 'Shop',
+    description: 'Bismillah Cotton & Sports Hub — premium cotton fabrics, clothing & sports wear. COD, PayFast & JazzCash.',
+  });
   const [customerName, setCustomerName] = useState<string | null>(null);
   // --- REAL LIVE DATABASE STATE ENGINE ---
   const [products, setProducts] = useState<Product[]>([]);
@@ -1019,10 +1024,12 @@ export default function StoreApp() {
           <div className="space-y-3">
             <h4 className="font-display font-semibold text-white uppercase tracking-widest text-[11px]">Customer Support Hub</h4>
             <ul className="space-y-1.5 text-slate-400 text-[11px]">
+              <li><Link to="/contact" className="hover:text-indigo-400 transition-colors">Contact Us</Link></li>
+              <li><Link to="/privacy" className="hover:text-indigo-400 transition-colors">Privacy Policy</Link></li>
+              <li><Link to="/terms" className="hover:text-indigo-400 transition-colors">Terms & Conditions</Link></li>
               <li>Cash on Delivery Support (Pakistan-wide)</li>
-              <li>Verified SSL Credit Card Online Portal</li>
+              <li>PayFast & JazzCash accepted</li>
               <li>7-Day Free Return Policy</li>
-              <li>Shipping warehouse address: Lahore Karkhana Market</li>
             </ul>
           </div>
 

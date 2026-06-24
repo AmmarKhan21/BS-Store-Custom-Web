@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Product, Order, Coupon, StoreStats } from '../types';
+import { Product, Order, Coupon, StoreStats, AdminCustomer } from '../types';
 import { 
   BarChart, 
   TrendingUp, 
@@ -21,7 +21,8 @@ import {
   Sparkles,
   AlertCircle,
   Edit3,
-  FolderOpen
+  FolderOpen,
+  Users
 } from 'lucide-react';
 
 interface AdminPortalProps {
@@ -40,6 +41,10 @@ interface AdminPortalProps {
   onAddCategory: (categoryName: string) => void;
   onDeleteCategory: (categoryName: string) => void;
   onUpdateCategory: (oldName: string, newName: string) => void;
+  stats: StoreStats | null;
+  customers: AdminCustomer[];
+  onUpdateOrderTracking: (orderId: string, trackingNumber: string) => void;
+  onUploadImage: (file: File) => Promise<string | null>;
 }
 
 export default function AdminPortal({
@@ -58,8 +63,12 @@ export default function AdminPortal({
   onAddCategory,
   onDeleteCategory,
   onUpdateCategory,
+  stats,
+  customers,
+  onUpdateOrderTracking,
+  onUploadImage,
 }: AdminPortalProps) {
-  const [activeSubTab, setActiveSubTab] = useState<'dashboard' | 'products' | 'orders' | 'coupons'>('dashboard');
+  const [activeSubTab, setActiveSubTab] = useState<'dashboard' | 'products' | 'orders' | 'coupons' | 'customers'>('dashboard');
 
   // Add Product Form States
   const [newProductName, setNewProductName] = useState('');
@@ -91,6 +100,8 @@ export default function AdminPortal({
   // Input Validation Error States
   const [formError, setFormError] = useState('');
   const [couponFormError, setCouponFormError] = useState('');
+  const [imageUploading, setImageUploading] = useState(false);
+  const [trackingDrafts, setTrackingDrafts] = useState<Record<string, string>>({});
 
   // Customer Orders Filters
   const [orderQuery, setOrderQuery] = useState('');
@@ -98,30 +109,49 @@ export default function AdminPortal({
   // -------------------------------------------------------------
   // Math & Statistics compiling for the Shopify dashboard overview
   // -------------------------------------------------------------
-  const totalSales = orders
+  const totalSales = stats?.totalSales ?? orders
     .filter(o => o.status !== 'Cancelled')
     .reduce((acc, order) => acc + order.total, 0);
 
-  const totalOrders = orders.length;
+  const totalOrders = stats?.totalOrders ?? orders.filter(o => o.status !== 'Cancelled').length;
   
   const activeProducts = products.length;
   
-  const averageOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
+  const averageOrderValue = stats?.averageOrderValue ?? (totalOrders > 0 ? totalSales / totalOrders : 0);
   
-  const outOfStockCount = products.filter(p => p.stock <= 0).length;
+  const outOfStockCount = stats?.outOfStockCount ?? products.filter(p => p.stock <= 0).length;
+  const lowStockProducts = stats?.lowStockProducts ?? [];
 
-  // Compile daily revenue metrics (mock and live custom checkouts integrated)
-  const revenueChartData = [
-    { label: 'Mon', value: 120 },
-    { label: 'Tue', value: 245 },
-    { label: 'Wed', value: 190 },
-    { label: 'Thu', value: 310 },
-    { label: 'Fri', value: 430 },
-    { label: 'Sat', value: 512 },
-    { label: 'Sun', value: Math.max(80, totalSales * 0.45) } // Scale dynamically with customer actions
-  ];
+  const revenueChartData = (stats?.revenueByDays ?? []).map((d) => ({
+    label: new Date(d.date + 'T12:00:00').toLocaleDateString('en', { weekday: 'short', month: 'short', day: 'numeric' }),
+    value: d.amount,
+  }));
 
-  const maxChartVal = Math.max(...revenueChartData.map(d => d.value)) * 1.15;
+  const categoryChartData = stats?.categorySales?.length
+    ? stats.categorySales
+    : categories.map((cat) => {
+        const catProducts = products.filter((p) => p.category === cat);
+        return {
+          category: cat,
+          count: catProducts.length,
+          revenue: catProducts.reduce((s, p) => s + p.price, 0),
+        };
+      });
+
+  const maxChartVal = Math.max(...revenueChartData.map(d => d.value), 1) * 1.15;
+
+  const handleImageFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageUploading(true);
+    try {
+      const url = await onUploadImage(file);
+      if (url) setNewProductImg(url);
+    } finally {
+      setImageUploading(false);
+      e.target.value = '';
+    }
+  };
 
   const handleCreateProduct = (e: React.FormEvent) => {
     e.preventDefault();
@@ -268,6 +298,14 @@ export default function AdminPortal({
             Manage Orders ({orders.length})
           </button>
           <button
+            onClick={() => setActiveSubTab('customers')}
+            className={`px-4 py-2 rounded-md transition-all cursor-pointer whitespace-nowrap ${
+              activeSubTab === 'customers' ? 'bg-indigo-650 text-white' : 'text-slate-300 hover:text-white'
+            }`}
+          >
+            Customers ({customers.length})
+          </button>
+          <button
             onClick={() => setActiveSubTab('coupons')}
             className={`px-4 py-2 rounded-md transition-all cursor-pointer whitespace-nowrap ${
               activeSubTab === 'coupons' ? 'bg-indigo-650 text-white' : 'text-slate-300 hover:text-white'
@@ -325,22 +363,37 @@ export default function AdminPortal({
 
             {/* KPI 4: Alert status out-of-stock count */}
             <div className="p-5 bg-slate-50 border border-slate-200 rounded-xl relative overflow-hidden group hover:border-indigo-400/50 transition-colors">
-              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest block">Out of Stock Warnings</span>
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest block">Low Stock Alerts</span>
               <div className="flex items-baseline gap-2 mt-1.5">
-                <span className={`text-2xl font-bold ${outOfStockCount > 0 ? 'text-red-650' : 'text-slate-900'}`}>
-                  {outOfStockCount} Items
+                <span className={`text-2xl font-bold ${lowStockProducts.length > 0 ? 'text-amber-600' : 'text-slate-900'}`}>
+                  {lowStockProducts.length} Items
                 </span>
-                {outOfStockCount === 0 && (
-                  <span className="text-[10px] text-indigo-600 font-bold px-1.5 py-0.2 bg-indigo-50 rounded">Healthy</span>
+                {outOfStockCount > 0 && (
+                  <span className="text-[10px] text-red-600 font-bold px-1.5 py-0.2 bg-red-50 rounded">{outOfStockCount} out</span>
                 )}
               </div>
-              <p className="text-[10px] text-slate-400 mt-2">Need replenishment parameters soon</p>
+              <p className="text-[10px] text-slate-400 mt-2">{outOfStockCount} completely out of stock</p>
               <div className="absolute right-4 bottom-4 text-indigo-900/10 group-hover:scale-105 transition-transform">
                 <Package size={40} className="stroke-[1.5]" />
               </div>
             </div>
 
           </div>
+
+          {lowStockProducts.length > 0 && (
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
+              <h3 className="text-xs font-bold text-amber-900 uppercase tracking-wider mb-2 flex items-center gap-2">
+                <AlertCircle size={14} /> Low stock — reorder soon
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {lowStockProducts.map((p) => (
+                  <span key={p.id} className="text-[10px] font-semibold bg-white border border-amber-200 text-amber-900 px-2.5 py-1 rounded-lg">
+                    {p.name} ({p.stock} left)
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Graphical Analytics Charts Row & Ratios */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6" id="dashboard-graphs-shelf">
@@ -353,11 +406,13 @@ export default function AdminPortal({
                   <p className="text-[10px] text-slate-500 font-sans">Visual representation of gross transactions checkout metrics</p>
                 </div>
                 <div className="text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded border border-indigo-100">
-                  Total Mon-Sun: ${totalSales.toFixed(0)}
+                  Last {revenueChartData.length} days: ${revenueChartData.reduce((s, d) => s + d.value, 0).toFixed(0)}
                 </div>
               </div>
 
-              {/* Graphical bars construct */}
+              {revenueChartData.length === 0 ? (
+                <div className="h-48 flex items-center justify-center text-xs text-slate-400 italic">No revenue data yet — orders will appear here</div>
+              ) : (
               <div className="h-48 flex items-end justify-between gap-2.5 px-2 pt-6 pb-2" id="analyst-chart">
                 {revenueChartData.map((data, index) => {
                   const percentageHeight = (data.value / maxChartVal) * 100;
@@ -374,7 +429,6 @@ export default function AdminPortal({
                         style={{ height: `${Math.max(8, percentageHeight)}%` }}
                         className="w-full bg-slate-200 hover:bg-indigo-600 rounded-t-sm transition-all duration-500 cursor-pointer ease-out relative overflow-hidden"
                       >
-                        {data.label === 'Sun' && <div className="absolute inset-0 bg-indigo-500/30 animate-pulse" />}
                       </div>
                       
                       {/* Label */}
@@ -383,41 +437,44 @@ export default function AdminPortal({
                   );
                 })}
               </div>
+              )}
             </div>
 
             {/* Quick Catalog Categories distribution panel */}
             <div className="p-5 bg-white border border-slate-200 rounded-xl">
               <h3 className="font-display font-bold text-sm text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-3 mb-4">
-                Categories Split Weight
+                Sales by Category
               </h3>
               
               <div className="space-y-4" id="categories-ratios">
-                {['Cotton Collection', 'Clothing', 'Sports Wear', 'Sports Gear'].map((cat, i) => {
-                  const catProducts = products.filter(p => p.category === cat);
-                  const percentage = products.length > 0 ? (catProducts.length / products.length) * 100 : 0;
+                {categoryChartData.slice(0, 6).map((cat, i) => {
+                  const maxRevenue = Math.max(...categoryChartData.map((c) => c.revenue), 1);
+                  const percentage = (cat.revenue / maxRevenue) * 100;
                   
                   return (
-                    <div key={i} className="space-y-1.5 text-xs">
+                    <div key={cat.category} className="space-y-1.5 text-xs">
                       <div className="flex justify-between font-medium text-slate-700">
-                        <span>{cat}</span>
+                        <span>{cat.category}</span>
                         <span className="font-bold text-slate-900">
-                          {catProducts.length} items ({percentage.toFixed(0)}%)
+                          {cat.count} sold · ${cat.revenue.toFixed(0)}
                         </span>
                       </div>
-                      {/* CSS progress bar */}
                       <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
                         <div 
                           style={{ width: `${percentage}%` }}
                           className={`h-full rounded-full ${
-                            i === 0 ? 'bg-indigo-805' :
+                            i === 0 ? 'bg-indigo-600' :
                             i === 1 ? 'bg-slate-800' :
-                            i === 2 ? 'bg-indigo-600' : 'bg-indigo-400'
+                            i === 2 ? 'bg-indigo-500' : 'bg-indigo-400'
                           }`}
                         />
                       </div>
                     </div>
                   );
                 })}
+                {categoryChartData.length === 0 && (
+                  <p className="text-xs text-slate-400 italic">No category sales yet</p>
+                )}
               </div>
 
               {/* Notice panel */}
@@ -723,14 +780,24 @@ export default function AdminPortal({
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">Unsplash/External Image URL Select</label>
-                  <input
-                    type="url"
-                    value={newProductImg}
-                    onChange={(e) => setNewProductImg(e.target.value)}
-                    placeholder="https://images.unsplash.com/photo-..."
-                    className="w-full p-2.5 bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500 font-medium"
-                  />
+                  <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">Product Image</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      value={newProductImg}
+                      onChange={(e) => setNewProductImg(e.target.value)}
+                      placeholder="https://... or upload below"
+                      className="flex-1 p-2.5 bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500 font-medium"
+                    />
+                    <label className="flex items-center gap-1.5 px-3 py-2 bg-indigo-50 border border-indigo-200 rounded-lg text-[10px] font-bold text-indigo-700 cursor-pointer hover:bg-indigo-100 whitespace-nowrap">
+                      <Upload size={12} />
+                      {imageUploading ? 'Uploading…' : 'Upload'}
+                      <input type="file" accept="image/*" className="hidden" onChange={handleImageFile} disabled={imageUploading} />
+                    </label>
+                  </div>
+                  {newProductImg && (
+                    <img src={newProductImg} alt="" className="mt-2 w-16 h-16 object-cover rounded-lg border border-slate-200" />
+                  )}
                 </div>
 
                 <div>
@@ -1036,6 +1103,24 @@ export default function AdminPortal({
                           <span className="text-indigo-700 font-black font-display text-base">${ord.total.toFixed(2)}</span>
                         </div>
                       </div>
+
+                      <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100">
+                        <Truck size={12} className="text-slate-400" />
+                        <input
+                          type="text"
+                          placeholder="Tracking number"
+                          value={trackingDrafts[ord.id] ?? ord.trackingNumber ?? ''}
+                          onChange={(e) => setTrackingDrafts((d) => ({ ...d, [ord.id]: e.target.value }))}
+                          className="flex-1 min-w-[140px] p-1.5 text-xs border border-slate-300 rounded-lg"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => onUpdateOrderTracking(ord.id, trackingDrafts[ord.id] ?? ord.trackingNumber ?? '')}
+                          className="px-3 py-1.5 text-[10px] font-bold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 cursor-pointer"
+                        >
+                          Save tracking
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1043,6 +1128,58 @@ export default function AdminPortal({
             )}
           </div>
 
+        </div>
+      )}
+
+      {/* ACTIVE SCREEN: CUSTOMER MANAGEMENT */}
+      {activeSubTab === 'customers' && (
+        <div className="p-6 space-y-6">
+          <div className="border-b border-slate-200 pb-4">
+            <h3 className="font-display font-bold text-base text-slate-900 uppercase tracking-wider flex items-center gap-2">
+              <Users size={18} /> Registered Customers
+            </h3>
+            <p className="text-[10px] text-slate-500 font-sans mt-1">Accounts created via email registration with order history</p>
+          </div>
+
+          {customers.length === 0 ? (
+            <div className="text-center py-12 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+              <Users size={32} className="text-slate-300 mx-auto mb-2.5" />
+              <p className="text-xs text-slate-500">No registered customers yet</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto bg-white border border-slate-200 rounded-xl">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[10px] border-b border-slate-100">
+                    <th className="py-3 px-4">Name</th>
+                    <th className="py-3 px-4">Email</th>
+                    <th className="py-3 px-4">Phone</th>
+                    <th className="py-3 px-4 text-center">Verified</th>
+                    <th className="py-3 px-4 text-center">Orders</th>
+                    <th className="py-3 px-4 text-right">Total Spent</th>
+                    <th className="py-3 px-4">Joined</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {customers.map((c) => (
+                    <tr key={c.id} className="border-b border-slate-50 hover:bg-slate-50/50">
+                      <td className="py-3 px-4 font-semibold text-slate-900">{c.name}</td>
+                      <td className="py-3 px-4 text-slate-600">{c.email}</td>
+                      <td className="py-3 px-4 text-slate-500">{c.phone || '—'}</td>
+                      <td className="py-3 px-4 text-center">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${c.isVerified ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                          {c.isVerified ? 'Yes' : 'Pending'}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-center font-bold">{c.orderCount}</td>
+                      <td className="py-3 px-4 text-right font-bold text-indigo-700">${c.totalSpent.toFixed(2)}</td>
+                      <td className="py-3 px-4 text-slate-500">{new Date(c.createdAt).toLocaleDateString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 
