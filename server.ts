@@ -47,6 +47,7 @@ import {
   saveOtp,
   verifyOtp,
   getCustomerOrders,
+  linkGuestOrdersToCustomer,
   getOrderById,
   confirmOrderPayment,
   getAllCustomersAdmin,
@@ -247,6 +248,8 @@ app.post("/api/auth/verify-otp", async (req, res) => {
       return res.status(404).json({ success: false, error: "Account not found" });
     }
 
+    await linkGuestOrdersToCustomer(customer.id, customer.email);
+
     const token = createCustomerSessionToken(customer.id);
     res.json({
       success: true,
@@ -286,6 +289,8 @@ app.post("/api/auth/login", async (req, res) => {
       return res.json({ success: false, requiresOtp: true, message: "Please verify with the code sent to your email" });
     }
 
+    await linkGuestOrdersToCustomer(customer.id, customer.email);
+
     const token = createCustomerSessionToken(customer.id);
     res.json({
       success: true,
@@ -314,7 +319,10 @@ app.get("/api/auth/me", requireCustomer, async (req, res) => {
 
 app.get("/api/account/orders", requireCustomer, async (req, res) => {
   try {
-    const orders = await getCustomerOrders((req as any).customerId);
+    const customer = await getCustomerById((req as any).customerId);
+    if (!customer) return res.status(404).json({ error: "Not found" });
+    await linkGuestOrdersToCustomer(customer.id, customer.email);
+    const orders = await getCustomerOrders(customer.id, customer.email);
     res.json(orders);
   } catch (err: any) {
     res.status(500).json({ error: err.message });

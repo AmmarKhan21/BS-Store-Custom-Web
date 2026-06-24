@@ -354,15 +354,81 @@ export async function verifyOtp(email: string, code: string, purpose: string): P
   return true;
 }
 
-export async function getCustomerOrders(customerId: string): Promise<any[]> {
+function normalizeCustomerEmail(email: string): string {
+  return email.toLowerCase().trim();
+}
+
+function emailsMatch(a?: string | null, b?: string | null): boolean {
+  if (!a || !b) return false;
+  return normalizeCustomerEmail(a) === normalizeCustomerEmail(b);
+}
+
+function parseOrderRecord(o: any) {
+  return {
+    ...o,
+    date: o.date instanceof Date ? o.date.toISOString() : o.date,
+    items: typeof o.items === "string" ? JSON.parse(o.items) : o.items,
+  };
+}
+
+/** Attach guest checkout orders (same email, no customerId) to a registered account. */
+export async function linkGuestOrdersToCustomer(
+  customerId: string,
+  email: string
+): Promise<number> {
+  const normalized = normalizeCustomerEmail(email);
+
+  if (isSupabaseAvailable) {
+    try {
+      const prisma = getPrisma();
+      const result = await prisma.order.updateMany({
+        where: {
+          customerId: null,
+          customerEmail: { equals: normalized, mode: "insensitive" },
+        },
+        data: { customerId },
+      });
+      return result.count;
+    } catch {
+      /* fallback */
+    }
+  }
+
+  if (!fs.existsSync(dbPath)) return 0;
+  const full = JSON.parse(fs.readFileSync(dbPath, "utf-8"));
+  let linked = 0;
+  full.orders = (full.orders || []).map((o: any) => {
+    if (!o.customerId && o.customerEmail && emailsMatch(o.customerEmail, normalized)) {
+      linked += 1;
+      return { ...o, customerId };
+    }
+    return o;
+  });
+  if (linked > 0) {
+    fs.writeFileSync(dbPath, JSON.stringify(full, null, 2), "utf-8");
+  }
+  return linked;
+}
+
+export async function getCustomerOrders(
+  customerId: string,
+  customerEmail: string
+): Promise<any[]> {
+  const normalized = normalizeCustomerEmail(customerEmail);
+
   if (isSupabaseAvailable) {
     try {
       const prisma = getPrisma();
       const list = await prisma.order.findMany({
-        where: { customerId },
+        where: {
+          OR: [
+            { customerId },
+            { customerEmail: { equals: normalized, mode: "insensitive" } },
+          ],
+        },
         orderBy: { date: "desc" },
       });
-      return list.map((o) => ({ ...o, items: JSON.parse(o.items) }));
+      return list.map(parseOrderRecord);
     } catch {
       /* fallback */
     }
@@ -371,9 +437,12 @@ export async function getCustomerOrders(customerId: string): Promise<any[]> {
   if (!fs.existsSync(dbPath)) return [];
   const full = JSON.parse(fs.readFileSync(dbPath, "utf-8"));
   return (full.orders || [])
-    .filter((o: any) => o.customerId === customerId)
-    .map((o: any) => ({ ...o, items: typeof o.items === "string" ? JSON.parse(o.items) : o.items }))
-    .sort((a: any, b: any) => b.date.localeCompare(a.date));
+    .filter(
+      (o: any) =>
+        o.customerId === customerId || emailsMatch(o.customerEmail, normalized)
+    )
+    .map(parseOrderRecord)
+    .sort((a: any, b: any) => String(b.date).localeCompare(String(a.date)));
 }
 
 export async function getOrderById(orderId: string): Promise<any | null> {
@@ -512,7 +581,7 @@ export async function getCustomerOrderById(
 ): Promise<any | null> {
   const order = await getOrderById(orderId);
   if (!order) return null;
-  if (order.customerId === customerId || order.customerEmail === customerEmail) {
+  if (order.customerId === customerId || emailsMatch(order.customerEmail, customerEmail)) {
     return order;
   }
   return null;
