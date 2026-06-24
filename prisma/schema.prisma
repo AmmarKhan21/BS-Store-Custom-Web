@@ -1,0 +1,70 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Product {
+  id            String   @id
+  name          String
+  description   String?
+  price         Float
+  originalPrice Float?
+  category      String
+  images        String?  // JSON stringified array of image URLs
+  sizes         String?  // JSON stringified array of sizes
+  colors        String?  // JSON stringified array of hex colors
+  rating        Float    @default(5.0)
+  stock         Int      @default(10)
+  isFeatured    Int      @default(0) // 0 for false, 1 for true
+  dateAdded     String?
+  reviews       Review[]
+
+  @@map("products")
+}
+
+model Review {
+  id           String  @id
+  productId    String
+  reviewerName String
+  rating       Float
+  comment      String?
+  date         String?
+  product      Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("reviews")
+}
+
+model Order {
+  id              String  @id
+  customerName    String
+  customerEmail   String
+  customerPhone   String
+  shippingAddress String
+  city            String
+  postalCode      String
+  items           String  // JSON stringified order items
+  subtotal        Float
+  discount        Float   @default(0)
+  total           Float
+  paymentMethod   String  // 'COD' or 'CARD'
+  paymentStatus   String  // 'Pending' or 'Paid'
+  status          String  // 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled'
+  date            String
+  notes           String?
+
+  @@map("orders")
+}
+
+model Coupon {
+  code         String @id
+  discountType String // 'percentage' or 'fixed'
+  value        Float
+  minPurchase  Float  @default(0)
+  isActive     Int    @default(1)
+
+  @@map("coupons")
+}

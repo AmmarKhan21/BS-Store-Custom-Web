@@ -1,0 +1,209 @@
+{
+  "products": [
+    {
+      "id": "prod-1",
+      "name": "Bismillah Premium Royal Cotton Unstitched Suit",
+      "description": "Experience pure luxury with our signature 100% fine Egyptian cotton fabric. Breathable, comfortable, and perfect for elegant traditional wear. Known for rich texture and high color-retention capabilities.",
+      "price": 35,
+      "originalPrice": 49,
+      "category": "Cotton Collection",
+      "images": "[\"https://images.unsplash.com/photo-1597983073493-88cd35cf93b0?q=80&w=700&auto=format&fit=crop\",\"https://images.unsplash.com/photo-1544441893-675973e31985?q=80&w=700&auto=format&fit=crop\"]",
+      "sizes": "[\"4 Meters\",\"4.5 Meters\",\"5 Meters\"]",
+      "colors": "[\"#EDEAE0\",\"#000080\",\"#0B132B\",\"#E5D3B3\"]",
+      "rating": 4.8,
+      "stock": 45,
+      "isFeatured": 1,
+      "dateAdded": "2026-06-01"
+    },
+    {
+      "id": "prod-2",
+      "name": "Classic White Soft Cotton Shalwar Kameez",
+      "description": "Beautifully tailored, pre-shrunk, premium soft cotton Shalwar Kameez. Features a classic band collar with minimal modern embroidery on the placket.",
+      "price": 49,
+      "originalPrice": 75,
+      "category": "Cotton Collection",
+      "images": "[\"https://images.unsplash.com/photo-1607345366928-199ea26cfe3e?q=80&w=700&auto=format&fit=crop\"]",
+      "sizes": "[\"S\",\"M\",\"L\",\"XL\"]",
+      "colors": "[\"#FFFFFF\",\"#F2F2F2\",\"#E1E6E1\"]",
+      "rating": 4.9,
+      "stock": 24,
+      "isFeatured": 1,
+      "dateAdded": "2026-05-20"
+    },
+    {
+      "id": "prod-3",
+      "name": "Bismillah Breathable Cotton Polo Tee",
+      "description": "A relaxed everyday smart-casual wear polo t-shirt crafted entirely from combed pique cotton. Offers superior thermal dynamics and super soft ribbing on collars and cuffs.",
+      "price": 18,
+      "originalPrice": 24,
+      "category": "Clothing",
+      "images": "[\"https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=700&auto=format&fit=crop\"]",
+      "sizes": "[\"M\",\"L\",\"XL\"]",
+      "colors": "[\"#1A365D\",\"#E2E8F0\",\"#2D3748\"]",
+      "rating": 4.5,
+      "stock": 60,
+      "isFeatured": 0,
+      "dateAdded": "2026-06-05"
+    },
+    {
+      "id": "prod-4",
+      "name": "Ultra-Comfort Sweat-Wicking Gym Hoodie",
+      "description": "Engineered for high performance, this light-weight stretch athletic hoodie ensures your muscles stay warm while providing dry-fit airflow properties.",
+      "price": 29,
+      "originalPrice": 39,
+      "category": "Sports Wear",
+      "images": "[\"https://images.unsplash.com/photo-1556905055-8f358a7a47b2?q=80&w=700&auto=format&fit=crop\"]",
+      "sizes": "[\"S\",\"M\",\"L\",\"XL\"]",
+      "colors": "[\"#3F3F46\",\"#27272A\",\"#D4D4D8\"]",
+      "rating": 4.6,
+      "stock": 18,
+      "isFeatured": 1,
+      "dateAdded": "2026-06-12"
+    },
+    {
+      "id": "prod-5",
+      "name": "Ergonomic Aero-Strike Tennis Racket",
+      "description": "Carbon-fiber frame delivering supreme swing weight control, stability, and tennis ball propulsion. Featuring double anti-shock dampening wraps on the handle grip.",
+      "price": 110,
+      "originalPrice": 150,
+      "category": "Sports Gear",
+      "images": "[\"https://images.unsplash.com/photo-1617083934335-e10df2e53efb?q=80&w=700&auto=format&fit=crop\"]",
+      "sizes": "[\"Standard grip size 4 3/8\",\"Standard grip size 4 1/4\"]",
+      "colors": "[\"#FF4500\",\"#1E90FF\"]",
+      "rating": 4.7,
+      "stock": 12,
+      "isFeatured": 1,
+      "dateAdded": "2026-05-18"
+    },
+    {
+      "id": "prod-1782281506502",
+      "name": "1232as",
+      "description": "Premium classic fabric clothing style suited for best elegance & luxurious casual standards.",
+      "price": 239,
+      "originalPrice": null,
+      "category": "Sports Wear",
+      "images": "[\"https://images.unsplash.com/photo-1544441893-675973e31985?q=80&w=700&auto=format&fit=crop\"]",
+      "sizes": "[\"S\",\"M\",\"L\",\"XL\",\"XXL\"]",
+      "colors": "[\"#FFFFFF\",\"#000000\",\"#eedbc5\"]",
+      "rating": 5,
+      "stock": 30,
+      "isFeatured": 1,
+      "dateAdded": "2026-06-24"
+    },
+    {
+      "id": "prod-1782281989491",
+      "name": "New test trophy",
+      "description": "Premium classic fabric clothing style suited for best elegance & luxurious casual standards.",
+      "price": 39,
+      "originalPrice": 12,
+      "category": "Trophy",
+      "images": "[\"https://www.trophee-sportif.com/9853-thickbox_default/coupe-or.jpg\"]",
+      "sizes": "[\"S\",\"M\",\"L\",\"XL\"]",
+      "colors": "[\"#FFFFFF\",\"#000000\",\"#eedbc5\"]",
+      "rating": 5,
+      "stock": 2,
+      "isFeatured": 1,
+      "dateAdded": "2026-06-24"
+    }
+  ],
+  "reviews": [
+    {
+      "id": "rev-1",
+      "productId": "prod-1",
+      "reviewerName": "Hassan Ali",
+      "rating": 5,
+      "comment": "Exceptional quality. Soft, cool fabric ideal for hot summers.",
+      "date": "2026-06-15"
+    },
+    {
+      "id": "rev-2",
+      "productId": "prod-1",
+      "reviewerName": "Zainab Bibi",
+      "rating": 4,
+      "comment": "Nice packaging and original color matches the photos correctly.",
+      "date": "2026-06-18"
+    },
+    {
+      "id": "rev-3",
+      "productId": "prod-2",
+      "reviewerName": "Muhammad Ahmed",
+      "rating": 5,
+      "comment": "Fitting was spot-on. Stitching is clean and very robust. Highly recommended!",
+      "date": "2026-06-10"
+    },
+    {
+      "id": "rev-4",
+      "productId": "prod-3",
+      "reviewerName": "Daniyal Khan",
+      "rating": 4,
+      "comment": "Very soft, nice regular fit. Comfortable for afternoon strolls.",
+      "date": "2026-06-20"
+    },
+    {
+      "id": "rev-5",
+      "productId": "prod-4",
+      "reviewerName": "Usman Ghani",
+      "rating": 5,
+      "comment": "Best hoodies ever. Dries quickly after high-intensity training.",
+      "date": "2026-06-08"
+    },
+    {
+      "id": "rev-6",
+      "productId": "prod-5",
+      "reviewerName": "Sajid S.",
+      "rating": 5,
+      "comment": "Stiff racket with awesome sweet spot. Highly interactive performance.",
+      "date": "2026-06-02"
+    }
+  ],
+  "coupons": [
+    {
+      "code": "BISMILLAH10",
+      "discountType": "percentage",
+      "value": 10,
+      "minPurchase": 20,
+      "isActive": 1
+    },
+    {
+      "code": "COTTONSUPREME",
+      "discountType": "fixed",
+      "value": 15,
+      "minPurchase": 50,
+      "isActive": 1
+    },
+    {
+      "code": "SPORTSFREE",
+      "discountType": "percentage",
+      "value": 15,
+      "minPurchase": 0,
+      "isActive": 1
+    },
+    {
+      "code": "SAVE100",
+      "discountType": "fixed",
+      "value": 100,
+      "minPurchase": 250,
+      "isActive": 1
+    }
+  ],
+  "orders": [
+    {
+      "id": "ORD-8942",
+      "customerName": "Ammar Younas",
+      "customerEmail": "ammar.younas@xcorebit.com",
+      "customerPhone": "+92 301 2345678",
+      "shippingAddress": "DHA Phase 6, Block C",
+      "city": "Lahore",
+      "postalCode": "54000",
+      "items": "[{\"productId\":\"prod-1\",\"productName\":\"Bismillah Premium Royal Cotton Unstitched Suit\",\"price\":35,\"quantity\":2,\"selectedSize\":\"4.5 Meters\",\"selectedColor\":\"#EDEAE0\",\"image\":\"https://images.unsplash.com/photo-1597983073493-88cd35cf93b0?q=80&w=700&auto=format&fit=crop\"}]",
+      "subtotal": 70,
+      "discount": 7,
+      "total": 63,
+      "paymentMethod": "COD",
+      "paymentStatus": "Pending",
+      "status": "Processing",
+      "date": "2026-06-21T14:30:00Z",
+      "notes": "Please double-check the packing. Gift wrapping requested."
+    }
+  ]
+}

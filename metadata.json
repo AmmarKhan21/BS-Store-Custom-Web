@@ -1,0 +1,6 @@
+{
+  "name": "Bismillah Cotton & Sports Hub",
+  "description": "An eye-catching, fully functional e-commerce store with a rich Shopify-like Admin Panel, item manager, sales analytics, review system, promo codes, and interactive checkout supporting COD and card payments.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
