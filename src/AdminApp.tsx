@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { Product, Order, Coupon, StoreStats, AdminCustomer, StatsDateRange } from './types';
 import { Currency, convertFromUsd } from './lib/currency';
@@ -27,7 +27,14 @@ export default function AdminApp() {
   });
   const [exchangeRate, setExchangeRate] = useState(280);
   const [customers, setCustomers] = useState<AdminCustomer[]>([]);
+  const [statsLoading, setStatsLoading] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const statsRequestId = useRef(0);
+  const statsRangeRef = useRef<StatsDateRange>({ days: 7 });
+
+  useEffect(() => {
+    statsRangeRef.current = statsRange;
+  }, [statsRange]);
 
   const triggerToast = (message: string) => {
     setToastMessage(message);
@@ -67,28 +74,49 @@ export default function AdminApp() {
     return `/api/stats?${params}`;
   };
 
-  const loadStats = async (range: StatsDateRange = statsRange) => {
-    try {
-      const statsRes = await adminFetch(buildStatsUrl(range));
-      if (statsRes.ok) setStats(await statsRes.json());
-    } catch (err) {
-      console.error('Failed to load stats:', err);
+  const normalizeStatsRange = (range: StatsDateRange): StatsDateRange => {
+    if (range.from && range.to) {
+      return { from: range.from, to: range.to };
     }
+    return { days: range.days ?? 7 };
   };
 
+  const loadStats = useCallback(async (range: StatsDateRange) => {
+    const normalized = normalizeStatsRange(range);
+    const requestId = ++statsRequestId.current;
+    setStatsLoading(true);
+    try {
+      const statsRes = await adminFetch(buildStatsUrl(normalized));
+      if (requestId !== statsRequestId.current) return;
+      if (statsRes.ok) {
+        const data = await statsRes.json();
+        setStats(data);
+        setStatsRange(normalized);
+      } else {
+        triggerToast('Could not load stats for that date range.');
+      }
+    } catch (err) {
+      if (requestId !== statsRequestId.current) return;
+      console.error('Failed to load stats:', err);
+      triggerToast('Could not load stats for that date range.');
+    } finally {
+      if (requestId === statsRequestId.current) {
+        setStatsLoading(false);
+      }
+    }
+  }, []);
+
   const handleStatsRangeChange = (range: StatsDateRange) => {
-    setStatsRange(range);
     loadStats(range);
   };
 
   const loadAdminData = async () => {
     try {
-      const [prodRes, ordRes, coupRes, catRes, statsRes, custRes] = await Promise.all([
+      const [prodRes, ordRes, coupRes, catRes, custRes] = await Promise.all([
         adminFetch('/api/products'),
         adminFetch('/api/orders'),
         adminFetch('/api/coupons'),
         adminFetch('/api/categories'),
-        adminFetch(buildStatsUrl(statsRange)),
         adminFetch('/api/admin/customers'),
       ]);
 
@@ -117,7 +145,6 @@ export default function AdminApp() {
 
       if (Array.isArray(ords)) setOrders(ords);
       if (Array.isArray(coups)) setCoupons(coups);
-      if (statsRes.ok) setStats(await statsRes.json());
       if (custRes.ok) setCustomers(await custRes.json());
     } catch (err) {
       console.error('Failed to load admin data:', err);
@@ -131,7 +158,10 @@ export default function AdminApp() {
       const valid = await verifyAdminSession();
       if (cancelled) return;
       setIsAuthenticated(valid);
-      if (valid) await loadAdminData();
+      if (valid) {
+        await loadAdminData();
+        if (!cancelled) await loadStats(statsRangeRef.current);
+      }
       if (!cancelled) setIsBootstrapping(false);
     })();
     return () => {
@@ -223,6 +253,7 @@ export default function AdminApp() {
         triggerToast(`Order status updated to "${status}".`);
         const ordRes = await adminFetch('/api/orders');
         setOrders(await ordRes.json());
+        await loadStats(statsRangeRef.current);
       }
     } catch (e) {
       console.error('Order status update failure:', e);
@@ -242,6 +273,7 @@ export default function AdminApp() {
         triggerToast(`Payment status updated to "${paymentStatus}".`);
         const ordRes = await adminFetch('/api/orders');
         setOrders(await ordRes.json());
+        await loadStats(statsRangeRef.current);
       }
     } catch (e) {
       console.error('Payment status update failure:', e);
@@ -258,6 +290,7 @@ export default function AdminApp() {
         triggerToast(trackingNumber ? 'Tracking saved — customer notified by email.' : 'Tracking cleared.');
         const ordRes = await adminFetch('/api/orders');
         setOrders(await ordRes.json());
+        await loadStats(statsRangeRef.current);
       }
     } catch (e) {
       console.error('Tracking update failure:', e);
@@ -399,6 +432,7 @@ export default function AdminApp() {
           setIsBootstrapping(true);
           setIsAuthenticated(true);
           await loadAdminData();
+          await loadStats(statsRangeRef.current);
           const redirectTo =
             typeof location.state === 'object' &&
             location.state !== null &&
@@ -493,6 +527,7 @@ export default function AdminApp() {
           stats={stats}
           customers={customers}
           statsRange={statsRange}
+          statsLoading={statsLoading}
           onStatsRangeChange={handleStatsRangeChange}
           onUpdateOrderTracking={handleUpdateOrderTracking}
           onUploadImage={handleUploadImage}

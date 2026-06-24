@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Product, Order, Coupon, StoreStats, AdminCustomer, StatsDateRange } from '../types';
 import { Currency } from '../lib/currency';
@@ -48,6 +48,7 @@ interface AdminPortalProps {
   stats: StoreStats | null;
   customers: AdminCustomer[];
   statsRange: StatsDateRange;
+  statsLoading?: boolean;
   onStatsRangeChange: (range: StatsDateRange) => void;
   onUpdateOrderTracking: (orderId: string, trackingNumber: string) => void;
   onUploadImage: (file: File) => Promise<string | null>;
@@ -74,6 +75,7 @@ export default function AdminPortal({
   stats,
   customers,
   statsRange,
+  statsLoading = false,
   onStatsRangeChange,
   onUpdateOrderTracking,
   onUploadImage,
@@ -138,11 +140,8 @@ export default function AdminPortal({
   // -------------------------------------------------------------
   // Math & Statistics compiling for the Shopify dashboard overview
   // -------------------------------------------------------------
-  const totalSales = stats?.totalSales ?? orders
-    .filter(o => o.status !== 'Cancelled')
-    .reduce((acc, order) => acc + order.total, 0);
-
-  const totalOrders = stats?.totalOrders ?? orders.filter(o => o.status !== 'Cancelled').length;
+  const totalSales = stats?.totalSales ?? 0;
+  const totalOrders = stats?.totalOrders ?? 0;
   
   const activeProducts = products.length;
   
@@ -164,15 +163,79 @@ export default function AdminPortal({
   const isPresetActive = (days: number) =>
     !statsRange.from && !statsRange.to && (statsRange.days ?? 7) === days;
 
-  const applyCustomRange = () => {
-    if (customFrom && customTo && customFrom <= customTo) {
-      onStatsRangeChange({ from: customFrom, to: customTo });
+  const isCustomRangeActive = !!(statsRange.from && statsRange.to);
+
+  const displayDateRange =
+    statsLoading
+      ? null
+      : stats?.dateRange ??
+        (statsRange.from && statsRange.to
+          ? { from: statsRange.from, to: statsRange.to }
+          : null);
+
+  const activeFilterLabel = statsLoading
+    ? 'Updating analytics…'
+    : displayDateRange
+      ? `Showing ${displayDateRange.from} → ${displayDateRange.to}`
+      : `Showing last ${statsRange.days ?? 7} days`;
+
+  const tryApplyCustomRange = (from: string, to: string) => {
+    if (from && to && from <= to) {
+      onStatsRangeChange({ from, to });
     }
   };
 
-  const categoryChartData = stats?.categorySales?.length
-    ? stats.categorySales
-    : categories.map((cat) => {
+  const handlePresetClick = (days: number) => {
+    setCustomFrom('');
+    setCustomTo('');
+    onStatsRangeChange({ days });
+  };
+
+  const handleCustomFromChange = (value: string) => {
+    setCustomFrom(value);
+    if (value && customTo && value <= customTo) {
+      tryApplyCustomRange(value, customTo);
+    }
+  };
+
+  const handleCustomToChange = (value: string) => {
+    setCustomTo(value);
+    if (customFrom && value && customFrom <= value) {
+      tryApplyCustomRange(customFrom, value);
+    }
+  };
+
+  useEffect(() => {
+    if (statsRange.from && statsRange.to) {
+      setCustomFrom(statsRange.from);
+      setCustomTo(statsRange.to);
+    } else if (!statsRange.from && !statsRange.to) {
+      setCustomFrom('');
+      setCustomTo('');
+    }
+  }, [statsRange.from, statsRange.to]);
+
+  const applyCustomRange = () => {
+    tryApplyCustomRange(customFrom, customTo);
+  };
+
+  const orderDateKey = (dateVal: string | Date) => {
+    if (typeof dateVal === 'string') return dateVal.split('T')[0];
+    return new Date(dateVal).toISOString().split('T')[0];
+  };
+
+  const filteredDashboardOrders = displayDateRange
+    ? orders.filter((o) => {
+        if (o.status === 'Cancelled') return false;
+        const key = orderDateKey(o.date);
+        return key >= displayDateRange!.from && key <= displayDateRange!.to;
+      })
+    : orders.filter((o) => o.status !== 'Cancelled');
+
+  const categoryChartData =
+    stats != null
+      ? (stats.categorySales ?? [])
+      : categories.map((cat) => {
         const catProducts = products.filter((p) => p.category === cat);
         return {
           category: cat,
@@ -538,18 +601,22 @@ export default function AdminPortal({
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6" id="dashboard-graphs-shelf">
             
             {/* Custom Interactive CSS Bar Chart representing daily performance */}
-            <div className="p-5 bg-white border border-slate-200 rounded-xl lg:col-span-2">
+            <div className="p-5 bg-white border border-slate-200 rounded-xl lg:col-span-2 relative">
+              {statsLoading && (
+                <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] rounded-xl z-10 flex items-center justify-center">
+                  <div className="flex items-center gap-2 text-xs font-bold text-indigo-700">
+                    <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                    Updating…
+                  </div>
+                </div>
+              )}
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 border-b border-slate-100 pb-3 mb-4">
                 <div>
                   <h3 className="font-display font-bold text-sm text-slate-900 uppercase tracking-wider">Revenue Analytics</h3>
-                  <p className="text-[10px] text-slate-500 font-sans">
-                    {stats?.dateRange
-                      ? `${stats.dateRange.from} → ${stats.dateRange.to}`
-                      : 'Daily gross checkout revenue'}
-                  </p>
+                  <p className="text-[10px] text-slate-500 font-sans">{activeFilterLabel}</p>
                 </div>
                 <div className="text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded border border-indigo-100 whitespace-nowrap">
-                  Total: {formatMoney(chartTotal)}
+                  Total: {formatMoney(stats?.totalSales ?? chartTotal)}
                 </div>
               </div>
 
@@ -559,7 +626,8 @@ export default function AdminPortal({
                   <button
                     key={days}
                     type="button"
-                    onClick={() => onStatsRangeChange({ days })}
+                    onClick={() => handlePresetClick(days)}
+                    disabled={statsLoading}
                     className={`px-3 py-1.5 text-[10px] font-bold rounded-lg border transition-colors cursor-pointer ${
                       isPresetActive(days)
                         ? 'bg-indigo-600 text-white border-indigo-600'
@@ -573,21 +641,29 @@ export default function AdminPortal({
                 <input
                   type="date"
                   value={customFrom}
-                  onChange={(e) => setCustomFrom(e.target.value)}
-                  className="text-[10px] px-2 py-1.5 border border-slate-200 rounded-lg"
+                  onChange={(e) => handleCustomFromChange(e.target.value)}
+                  className={`text-[10px] px-2 py-1.5 border rounded-lg ${
+                    isCustomRangeActive ? 'border-indigo-400 bg-indigo-50' : 'border-slate-200'
+                  }`}
                 />
                 <span className="text-[10px] text-slate-400">to</span>
                 <input
                   type="date"
                   value={customTo}
-                  onChange={(e) => setCustomTo(e.target.value)}
-                  className="text-[10px] px-2 py-1.5 border border-slate-200 rounded-lg"
+                  onChange={(e) => handleCustomToChange(e.target.value)}
+                  className={`text-[10px] px-2 py-1.5 border rounded-lg ${
+                    isCustomRangeActive ? 'border-indigo-400 bg-indigo-50' : 'border-slate-200'
+                  }`}
                 />
                 <button
                   type="button"
                   onClick={applyCustomRange}
-                  disabled={!customFrom || !customTo || customFrom > customTo}
-                  className="px-3 py-1.5 text-[10px] font-bold rounded-lg bg-slate-800 text-white hover:bg-slate-900 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+                  disabled={!customFrom || !customTo || customFrom > customTo || statsLoading}
+                  className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-colors cursor-pointer disabled:cursor-not-allowed ${
+                    isCustomRangeActive
+                      ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                      : 'bg-slate-800 text-white hover:bg-slate-900 disabled:opacity-40'
+                  }`}
                 >
                   Apply
                 </button>
@@ -595,6 +671,10 @@ export default function AdminPortal({
 
               {revenueChartData.length === 0 ? (
                 <div className="h-48 flex items-center justify-center text-xs text-slate-400 italic">No revenue data for this period</div>
+              ) : revenueChartData.every((d) => d.value === 0) ? (
+                <div className="h-48 flex items-center justify-center text-xs text-slate-400 italic">
+                  No orders in {displayDateRange ? `${displayDateRange.from} → ${displayDateRange.to}` : 'this period'}
+                </div>
               ) : (
               <div className="flex gap-1" id="analyst-chart">
                 {/* Y-axis */}
@@ -703,7 +783,14 @@ export default function AdminPortal({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-sans">
-                  {orders.slice(0, 5).map((ord) => (
+                  {filteredDashboardOrders.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-8 text-center text-xs text-slate-400 italic">
+                        No orders in this date range
+                      </td>
+                    </tr>
+                  ) : (
+                  filteredDashboardOrders.slice(0, 5).map((ord) => (
                     <tr key={ord.id} className="hover:bg-indigo-50/10 transition-colors">
                       <td className="py-3.5 px-4 font-mono font-bold text-indigo-600">{ord.id}</td>
                       <td className="py-3.5 px-4 text-slate-500">
@@ -721,7 +808,8 @@ export default function AdminPortal({
                       <td className="py-3.5 px-4">{getStatusBadge(ord.status)}</td>
                       <td className="py-3.5 px-4 text-right font-bold text-slate-900">{formatMoney(ord.total)}</td>
                     </tr>
-                  ))}
+                  ))
+                  )}
                 </tbody>
               </table>
             </div>

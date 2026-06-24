@@ -851,6 +851,7 @@ export async function getAllOrders(): Promise<any[]> {
       });
       return list.map((o) => ({
         ...o,
+        date: new Date(o.date as string | Date).toISOString(),
         items: JSON.parse(o.items)
       }));
     } catch (err: any) {
@@ -996,9 +997,26 @@ export async function getStats(opts?: { days?: number; from?: string; to?: strin
         return d;
       })();
 
+  const toDateKey = (d: Date) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
+
+  const orderDateKey = (dateVal: string | Date) => {
+    if (typeof dateVal === "string") {
+      return dateVal.split("T")[0];
+    }
+    return toDateKey(dateVal);
+  };
+
+  const fromKey = toDateKey(fromDate);
+  const toKey = toDateKey(toDate);
+
   const inRange = (orderDate: string) => {
-    const d = new Date(orderDate);
-    return d >= fromDate && d <= toDate;
+    const key = orderDateKey(orderDate);
+    return key >= fromKey && key <= toKey;
   };
 
   const nonCancelled = orders.filter((o) => o.status !== "Cancelled" && inRange(o.date));
@@ -1009,16 +1027,9 @@ export async function getStats(opts?: { days?: number; from?: string; to?: strin
 
   const revenueMap: Record<string, number> = {};
   nonCancelled.forEach((o) => {
-    const day = o.date.split("T")[0];
+    const day = orderDateKey(o.date);
     revenueMap[day] = (revenueMap[day] || 0) + o.total;
   });
-
-  const toDateKey = (d: Date) => {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    return `${y}-${m}-${day}`;
-  };
 
   const revenueByDays: { date: string; amount: number }[] = [];
   const cursor = new Date(fromDate);
@@ -1063,7 +1074,7 @@ export async function getStats(opts?: { days?: number; from?: string; to?: strin
     outOfStockCount,
     lowStockCount: lowStockProducts.length,
     lowStockProducts,
-    dateRange: { from: toDateKey(fromDate), to: toDateKey(toDate) },
+    dateRange: { from: fromKey, to: toKey },
   };
 }
 

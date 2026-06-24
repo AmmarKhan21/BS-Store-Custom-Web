@@ -637,11 +637,20 @@ app.delete("/api/coupons/:code", requireAdmin, async (req, res) => {
 app.get("/api/stats", requireAdmin, async (req, res) => {
   try {
     const { days, from, to } = req.query;
-    const statsObj = await getStats({
-      days: days ? Number(days) : undefined,
-      from: typeof from === "string" ? from : undefined,
-      to: typeof to === "string" ? to : undefined,
-    });
+    const fromStr = typeof from === "string" ? from.trim() : "";
+    const toStr = typeof to === "string" ? to.trim() : "";
+    const statsObj =
+      fromStr && toStr
+        ? await getStats({ from: fromStr, to: toStr })
+        : await getStats({
+            days: (() => {
+              const parsed =
+                typeof days === "string" && days.trim() !== ""
+                  ? parseInt(days, 10)
+                  : NaN;
+              return !Number.isNaN(parsed) ? parsed : 7;
+            })(),
+          });
     res.json(statsObj);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
