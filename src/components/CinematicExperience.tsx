@@ -5,6 +5,7 @@ import { useCurrency } from '../context/CurrencyContext';
 import GalleryErrorBoundary from './GalleryErrorBoundary';
 
 const ProductGallery3D = lazy(() => import('./ProductGallery3D'));
+const HeroScene3D = lazy(() => import('./HeroScene3D'));
 
 type Props = {
   products: Product[];
@@ -136,6 +137,12 @@ export default function CinematicExperience({
               "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
           }}
         />
+
+        <Suspense fallback={null}>
+          <GalleryErrorBoundary fallback={<></>}>
+            <HeroScene3D />
+          </GalleryErrorBoundary>
+        </Suspense>
 
         <motion.p
           initial={{ opacity: 0, y: 12 }}
@@ -287,7 +294,7 @@ export default function CinematicExperience({
           </motion.div>
         </div>
 
-        <div className="relative mx-auto mt-10 h-[420px] w-full max-w-5xl px-4 sm:h-[500px] md:h-[560px]">
+        <div className="relative mx-auto mt-10 h-[460px] w-full max-w-6xl px-4 sm:h-[560px] md:h-[640px]">
           <Suspense
             fallback={
               <div className="flex h-full items-center justify-center text-sm text-[#c9a66b]">

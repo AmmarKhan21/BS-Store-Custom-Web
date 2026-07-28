@@ -1,5 +1,6 @@
-import React, { useMemo, useRef } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, ThreeEvent } from '@react-three/fiber';
+import { Float, MeshReflectorMaterial, RoundedBox, Sparkles } from '@react-three/drei';
 import * as THREE from 'three';
 import { Product } from '../types';
 
@@ -16,6 +17,25 @@ const DEMO: Item[] = [
   { id: 'd6', name: 'Wear', color: '#d4a574', image: '' },
 ];
 
+// Fits a loaded texture to a target plane aspect ratio the way CSS `object-fit: cover` would,
+// so portrait/landscape source photos don't stretch or skew inside the picture-frame plane.
+function fitTextureToCover(tex: THREE.Texture, planeAspect: number) {
+  const img = tex.image as { width: number; height: number } | undefined;
+  if (!img?.width || !img?.height) return;
+  const imageAspect = img.width / img.height;
+  if (imageAspect > planeAspect) {
+    const scale = planeAspect / imageAspect;
+    tex.repeat.set(scale, 1);
+    tex.offset.set((1 - scale) / 2, 0);
+  } else {
+    const scale = imageAspect / planeAspect;
+    tex.repeat.set(1, scale);
+    tex.offset.set(0, (1 - scale) / 2);
+  }
+  tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+  tex.needsUpdate = true;
+}
+
 function ProductBox({
   item,
   index,
@@ -28,13 +48,16 @@ function ProductBox({
   onSelect: (id: string) => void;
 }) {
   const mesh = useRef<THREE.Mesh>(null);
+  const [hovered, setHovered] = useState(false);
   const angle = (index / total) * Math.PI * 2;
   const radius = 3.1;
 
-  useFrame((state) => {
+  useFrame((state, dt) => {
     if (!mesh.current) return;
     mesh.current.position.y = Math.sin(state.clock.elapsedTime * 1.4 + index) * 0.2;
     mesh.current.rotation.y = angle + state.clock.elapsedTime * 0.15;
+    const targetScale = hovered ? 1.12 : 1;
+    mesh.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 1 - Math.pow(0.001, dt));
   });
 
   return (
@@ -46,20 +69,23 @@ function ProductBox({
         e.stopPropagation();
         onSelect(item.id);
       }}
-      onPointerOver={() => {
+      onPointerOver={(e: ThreeEvent<PointerEvent>) => {
+        e.stopPropagation();
+        setHovered(true);
         document.body.style.cursor = 'pointer';
       }}
       onPointerOut={() => {
+        setHovered(false);
         document.body.style.cursor = 'auto';
       }}
     >
       <boxGeometry args={[1.2, 1.6, 0.25]} />
       <meshStandardMaterial
         color={item.color}
-        metalness={0.35}
-        roughness={0.35}
+        metalness={0.45}
+        roughness={0.3}
         emissive={item.color}
-        emissiveIntensity={0.25}
+        emissiveIntensity={hovered ? 0.55 : 0.25}
       />
     </mesh>
   );
@@ -79,13 +105,16 @@ function PhotoCard({
   onSelect: (id: string) => void;
 }) {
   const group = useRef<THREE.Group>(null);
+  const [hovered, setHovered] = useState(false);
   const angle = (index / total) * Math.PI * 2;
   const radius = 3.1;
   const tex = textures[item.id];
 
-  useFrame((state) => {
+  useFrame((state, dt) => {
     if (!group.current) return;
     group.current.position.y = Math.sin(state.clock.elapsedTime * 1.3 + index) * 0.18;
+    const targetScale = hovered ? 1.1 : 1;
+    group.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 1 - Math.pow(0.001, dt));
   });
 
   return (
@@ -97,27 +126,29 @@ function PhotoCard({
         e.stopPropagation();
         onSelect(item.id);
       }}
-      onPointerOver={() => {
+      onPointerOver={(e: ThreeEvent<PointerEvent>) => {
+        e.stopPropagation();
+        setHovered(true);
         document.body.style.cursor = 'pointer';
       }}
       onPointerOut={() => {
+        setHovered(false);
         document.body.style.cursor = 'auto';
       }}
     >
       {/* Frame */}
-      <mesh>
-        <boxGeometry args={[1.5, 1.95, 0.14]} />
+      <RoundedBox args={[1.56, 2.01, 0.14]} radius={0.05} smoothness={4}>
         <meshStandardMaterial
-          color="#0f3d34"
-          metalness={0.45}
-          roughness={0.3}
-          emissive="#1f6b55"
-          emissiveIntensity={0.3}
+          color="#c9a66b"
+          metalness={0.9}
+          roughness={0.2}
+          emissive="#c9a66b"
+          emissiveIntensity={hovered ? 0.6 : 0.3}
         />
-      </mesh>
+      </RoundedBox>
       {/* Photo or color face */}
-      <mesh position={[0, 0.05, 0.08]}>
-        <planeGeometry args={[1.28, 1.55]} />
+      <mesh position={[0, 0.05, 0.09]}>
+        <planeGeometry args={[1.4, 1.75]} />
         {tex ? (
           <meshBasicMaterial map={tex} toneMapped={false} />
         ) : (
@@ -128,15 +159,15 @@ function PhotoCard({
           />
         )}
       </mesh>
-      {/* Gold rim accent */}
-      <mesh position={[0, 0, 0.02]}>
-        <boxGeometry args={[1.56, 2.01, 0.02]} />
+      {/* Subtle glass sheen overlay */}
+      <mesh position={[0, 0.05, 0.095]}>
+        <planeGeometry args={[1.4, 1.75]} />
         <meshStandardMaterial
-          color="#c9a66b"
-          emissive="#c9a66b"
-          emissiveIntensity={0.35}
-          metalness={0.8}
-          roughness={0.25}
+          color="#ffffff"
+          transparent
+          opacity={hovered ? 0.14 : 0.06}
+          metalness={0.1}
+          roughness={0.05}
         />
       </mesh>
     </group>
@@ -158,7 +189,7 @@ function Carousel({
   useFrame((_, dt) => {
     if (!root.current) return;
     if (!drag.current.active) {
-      root.current.rotation.y += dt * 0.45 + drag.current.v;
+      root.current.rotation.y += dt * 0.35 + drag.current.v;
       drag.current.v *= 0.93;
     }
   });
@@ -190,29 +221,45 @@ function Carousel({
         <meshStandardMaterial
           color="#c9a66b"
           emissive="#c9a66b"
-          emissiveIntensity={0.85}
+          emissiveIntensity={1}
           metalness={0.95}
-          roughness={0.15}
+          roughness={0.1}
         />
       </mesh>
 
-      {/* Soft floor disc */}
+      {/* Reflective floor for depth and shine */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.4, 0]}>
-        <circleGeometry args={[3.6, 64]} />
-        <meshStandardMaterial color="#061614" transparent opacity={0.85} />
+        <circleGeometry args={[5.5, 64]} />
+        <MeshReflectorMaterial
+          blur={[400, 120]}
+          resolution={512}
+          mixBlur={1}
+          mixStrength={35}
+          roughness={1}
+          depthScale={1}
+          minDepthThreshold={0.85}
+          color="#04120f"
+          metalness={0.7}
+          mirror={0.35}
+        />
       </mesh>
+
+      {/* Ambient gold dust */}
+      <Sparkles count={90} scale={[8, 4, 8]} size={2.4} speed={0.25} opacity={0.55} color="#e2c08a" />
 
       {/* Center gem */}
-      <mesh position={[0, 0.35, 0]} rotation={[0.4, 0.6, 0.2]}>
-        <octahedronGeometry args={[0.65, 0]} />
-        <meshStandardMaterial
-          color="#e2c08a"
-          emissive="#c9a66b"
-          emissiveIntensity={1}
-          metalness={1}
-          roughness={0.08}
-        />
-      </mesh>
+      <Float speed={2} rotationIntensity={0.8} floatIntensity={1.2}>
+        <mesh position={[0, 0.35, 0]} rotation={[0.4, 0.6, 0.2]}>
+          <octahedronGeometry args={[0.65, 0]} />
+          <meshStandardMaterial
+            color="#e2c08a"
+            emissive="#c9a66b"
+            emissiveIntensity={1.1}
+            metalness={1}
+            roughness={0.08}
+          />
+        </mesh>
+      </Float>
 
       <group ref={root}>
         {items.map((item, i) =>
@@ -254,6 +301,8 @@ function useProductTextures(items: Item[]) {
       return;
     }
 
+    const planeAspect = 1.4 / 1.75;
+
     items.forEach((item) => {
       if (!item.image) return;
       loader.load(
@@ -261,6 +310,7 @@ function useProductTextures(items: Item[]) {
         (tex) => {
           if (cancelled) return;
           tex.colorSpace = THREE.SRGBColorSpace;
+          fitTextureToCover(tex, planeAspect);
           next[item.id] = tex;
           remaining -= 1;
           if (remaining <= 0) setTextures({ ...next });
@@ -323,18 +373,26 @@ export default function ProductGallery3D({
     >
       <Canvas
         dpr={[1, 1.5]}
-        camera={{ position: [0, 1.8, 8.5], fov: 38 }}
+        shadows
+        camera={{ position: [0, 2.1, 9.5], fov: 36 }}
         gl={{ antialias: true, alpha: false }}
         style={{ width: '100%', height: '100%', display: 'block' }}
       >
         <color attach="background" args={['#0a2a24']} />
-        <ambientLight intensity={1.3} />
-        <directionalLight position={[4, 7, 5]} intensity={3.2} color="#fff6e5" />
+        <fog attach="fog" args={['#0a2a24', 9, 18]} />
+        <ambientLight intensity={1.2} />
+        <directionalLight position={[4, 7, 5]} intensity={3.2} color="#fff6e5" castShadow />
         <pointLight position={[-4, 3, 3]} intensity={2.5} color="#5fd4a8" />
         <pointLight position={[4, 2, 4]} intensity={2} color="#ffd89a" />
         <spotLight position={[0, 8, 2]} angle={0.45} penumbra={0.5} intensity={2.5} color="#ffe8b8" />
         <Carousel items={items} textures={textures} onSelect={handleSelect} />
       </Canvas>
+
+      <div className="pointer-events-none absolute inset-x-0 top-4 z-10 flex justify-center">
+        <span className="rounded-full border border-[#c9a66b]/40 bg-black/40 px-3 py-1 text-[9px] font-bold uppercase tracking-[0.25em] text-[#e2c08a]/90 backdrop-blur">
+          Live 3D
+        </span>
+      </div>
 
       <div className="pointer-events-none absolute inset-x-0 bottom-4 z-10 flex justify-center">
         <span className="rounded-full border border-[#c9a66b]/50 bg-black/50 px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-[#e2c08a] backdrop-blur">
