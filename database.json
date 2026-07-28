@@ -241,5 +241,39 @@
       "date": "2026-06-24T06:37:09.638Z",
       "notes": "integration test"
     }
+  ],
+  "categories": [
+    {
+      "id": "cat-1",
+      "name": "Cotton Collection",
+      "slug": "cotton-collection",
+      "image": null,
+      "sortOrder": 0,
+      "isActive": 1
+    },
+    {
+      "id": "cat-2",
+      "name": "Clothing",
+      "slug": "clothing",
+      "image": null,
+      "sortOrder": 1,
+      "isActive": 1
+    },
+    {
+      "id": "cat-3",
+      "name": "Sports Wear",
+      "slug": "sports-wear",
+      "image": null,
+      "sortOrder": 2,
+      "isActive": 1
+    },
+    {
+      "id": "cat-4",
+      "name": "Sports Gear",
+      "slug": "sports-gear",
+      "image": null,
+      "sortOrder": 3,
+      "isActive": 1
+    }
   ]
 }

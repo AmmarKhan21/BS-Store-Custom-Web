@@ -1,146 +1,173 @@
-import React, { useState } from 'react';
-import { Tag, Sparkles, ChevronRight, ChevronLeft, Shirt, Activity, Award } from 'lucide-react';
+import React, { Suspense, lazy } from 'react';
+import { motion } from 'motion/react';
+import { ArrowDown, ArrowRight, MousePointer2 } from 'lucide-react';
+import { Product } from '../types';
+import GalleryErrorBoundary from './GalleryErrorBoundary';
+
+const ProductGallery3D = lazy(() => import('./ProductGallery3D'));
 
 interface BannerHeroProps {
   onSelectCategory: (category: string) => void;
   activeCategory: string;
+  products: Product[];
+  onOpenProduct: (product: Product) => void;
 }
 
-export default function BannerHero({ onSelectCategory, activeCategory }: BannerHeroProps) {
-  const [currentSlide, setCurrentSlide] = useState(0);
-
-  const slides = [
-    {
-      badge: 'Summer Cotton Collection 2026',
-      title: 'Luxury Breathable Egyptian Cotton Fabrics',
-      subtitle: 'Experience pure traditional craftsmanship. Premium unstitched and stitched suits customized for style & absolute warm-weather freshness.',
-      image: 'https://images.unsplash.com/photo-1544441893-675973e31985?q=80&w=1200&auto=format&fit=crop',
-      cta: 'Explore Cotton Collection',
-      category: 'Cotton Collection',
-      colorTheme: 'from-indigo-950/95 to-slate-900/85',
-    },
-    {
-      badge: 'Pro Elite Athletic Launch',
-      title: 'Power and Dry-Fit Comfort Combined',
-      subtitle: 'Engineered stretch gymwear, high-tension rackets, and pro gear designed to elevate your physical performance standards.',
-      image: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?q=80&w=1200&auto=format&fit=crop',
-      cta: 'Shop Sports Gear',
-      category: 'Sports Gear',
-      colorTheme: 'from-slate-950/95 to-indigo-950/90',
-    }
-  ];
-
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % slides.length);
+export default function BannerHero({
+  onSelectCategory,
+  products,
+  onOpenProduct,
+}: BannerHeroProps) {
+  const shopCotton = () => {
+    onSelectCategory('Cotton Collection');
+    document.getElementById('store-grid-section')?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+  const shopSports = () => {
+    onSelectCategory('Sports Wear');
+    document.getElementById('store-grid-section')?.scrollIntoView({ behavior: 'smooth' });
   };
-
-  const current = slides[currentSlide];
 
   return (
-    <div className="relative w-full overflow-hidden" id="banner-hero-container">
-      {/* Immersive Slideshow Banner */}
-      <div className="relative h-[360px] sm:h-[420px] md:h-[480px] w-full rounded-2xl overflow-hidden bg-slate-900 shadow-xl" id="banner-slider">
-        <img
-          src={current.image}
-          alt={current.title}
-          className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 transform scale-102 filter brightness-75"
-        />
-        {/* Overlay gradient mask */}
-        <div className={`absolute inset-0 bg-gradient-to-r ${current.colorTheme}`} />
-        
-        {/* Slide Content */}
-        <div className="relative z-10 max-w-2xl text-white flex flex-col justify-center h-full px-5 sm:px-10 md:px-16">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-500/25 text-indigo-200 border border-indigo-500/35 rounded-full text-[10px] sm:text-xs font-bold tracking-wider uppercase mb-3.5 self-start">
-            <Sparkles size={11} />
-            {current.badge}
-          </span>
-          <h1 className="text-2xl sm:text-3.5xl md:text-5xl font-extrabold tracking-tight text-white mb-3 font-display leading-tight">
-            {current.title}
-          </h1>
-          <p className="text-slate-300 text-xs sm:text-sm md:text-base mb-6 md:mb-8 leading-relaxed font-sans max-w-lg">
-            {current.subtitle}
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3">
+    <section
+      className="relative w-full min-h-[100svh] overflow-hidden bg-[#061614]"
+      id="banner-hero-container"
+      aria-label="Bismillah Cotton and Sports Hub"
+    >
+      {/* Atmosphere */}
+      <div
+        className="absolute inset-0 z-0"
+        style={{
+          background:
+            'radial-gradient(ellipse 80% 70% at 75% 45%, #0f3d34 0%, #061614 55%, #040f0d 100%)',
+        }}
+      />
+      <div
+        className="pointer-events-none absolute -right-10 top-10 h-[60vmin] w-[60vmin] rounded-full blur-3xl opacity-40"
+        style={{
+          background: 'radial-gradient(circle, rgba(201,166,107,0.45), transparent 70%)',
+        }}
+      />
+      <div
+        className="pointer-events-none absolute left-0 bottom-0 h-[40vmin] w-[40vmin] rounded-full blur-3xl opacity-30"
+        style={{
+          background: 'radial-gradient(circle, rgba(46,157,124,0.5), transparent 70%)',
+        }}
+      />
+
+      <div className="relative z-10 mx-auto grid min-h-[100svh] max-w-[1400px] grid-cols-1 items-center gap-2 px-4 pb-20 pt-24 md:grid-cols-2 md:gap-6 md:px-8 md:pb-16 lg:px-12">
+        {/* Brand copy */}
+        <div className="order-2 md:order-1">
+          <motion.p
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+            className="font-display text-[clamp(2.8rem,7vw,5.25rem)] font-semibold leading-[0.9] tracking-tight text-[#f4efe6]"
+          >
+            Bismillah
+          </motion.p>
+          <motion.p
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.75, delay: 0.1 }}
+            className="mt-2 font-display text-[clamp(1rem,2.5vw,1.6rem)] font-medium uppercase tracking-[0.2em] text-[#c9a66b]"
+          >
+            Cotton & Sports Hub
+          </motion.p>
+
+          <motion.h1
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.2 }}
+            className="mt-7 max-w-md font-sans text-lg font-medium leading-snug text-[#e8e2d6] md:text-xl"
+          >
+            Spin our collection in 3D
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.28 }}
+            className="mt-3 max-w-md text-sm leading-relaxed text-[#b8b0a0] md:text-[15px]"
+          >
+            Drag the carousel, click any piece, and shop Egyptian cotton or sportswear — COD across Pakistan.
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.65, delay: 0.38 }}
+            className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center"
+          >
             <button
-              onClick={() => onSelectCategory(current.category)}
-              className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded-xl font-bold text-xs sm:text-sm transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 group cursor-pointer w-full sm:w-auto"
+              type="button"
+              onClick={shopCotton}
+              className="group inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-[#c9a66b] px-7 py-3.5 text-sm font-bold text-[#0a1a16] transition-all hover:bg-[#e2c08a]"
             >
-              <span>{current.cta}</span>
-              <ChevronRight size={14} className="transform group-hover:translate-x-1 transition-transform" />
+              Shop cotton
+              <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
             </button>
-            <div className="hidden md:flex items-center gap-2 text-white/80 text-xs font-medium px-4 py-2 border border-white/20 rounded-lg backdrop-blur-sm">
-              <Tag size={13} className="text-indigo-400" />
-              <span>Use <strong>BISMILLAH10</strong> for 10% Flat Discount</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Carousel controls */}
-        <button
-          onClick={prevSlide}
-          className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white transition-colors cursor-pointer z-10"
-          aria-label="Previous slide"
-        >
-          <ChevronLeft size={20} />
-        </button>
-        <button
-          onClick={nextSlide}
-          className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white transition-colors cursor-pointer z-10"
-          aria-label="Next slide"
-        >
-          <ChevronRight size={20} />
-        </button>
-
-        {/* Indicators */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-10">
-          {slides.map((_, i) => (
             <button
-              key={i}
-              onClick={() => setCurrentSlide(i)}
-              className={`w-3 h-3 rounded-full transition-all cursor-pointer ${
-                currentSlide === i ? 'bg-indigo-500 w-8' : 'bg-white/40'
-              }`}
-            />
-          ))}
+              type="button"
+              onClick={shopSports}
+              className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full border border-[#f4efe6]/35 px-7 py-3.5 text-sm font-bold text-[#f4efe6] transition-all hover:bg-white/5"
+            >
+              Shop sports
+            </button>
+          </motion.div>
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.7 }}
+            className="mt-6 hidden items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-[#8a9a94] md:flex"
+          >
+            <MousePointer2 size={14} className="text-[#c9a66b]" />
+            Drag right panel to explore products
+          </motion.p>
         </div>
+
+        {/* Visible 3D product carousel */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.92 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.9, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+          className="order-1 relative h-[58vh] min-h-[360px] w-full md:order-2 md:h-[78vh] md:min-h-[520px]"
+        >
+          <div className="absolute inset-0 rounded-3xl border border-[#c9a66b]/20 bg-[#0a221e]/40 shadow-[0_0_80px_-20px_rgba(201,166,107,0.45)] backdrop-blur-[2px]">
+            <Suspense
+              fallback={
+                <div className="flex h-full items-center justify-center">
+                  <div className="h-10 w-10 animate-spin rounded-full border-2 border-[#c9a66b] border-t-transparent" />
+                </div>
+              }
+            >
+              <GalleryErrorBoundary>
+                <ProductGallery3D products={products} onSelectProduct={onOpenProduct} />
+              </GalleryErrorBoundary>
+            </Suspense>
+          </div>
+        </motion.div>
       </div>
 
-      {/* Trust Highlights Section under Slide */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 mt-6" id="trust-indicators-grid">
-        <div className="flex items-center gap-3 sm:gap-4 bg-white border border-slate-205 p-3.5 sm:p-5 rounded-xl shadow-xs hover:shadow-sm transition-shadow">
-          <div className="p-2.5 bg-indigo-50 rounded-lg text-indigo-700 shrink-0">
-            <Shirt size={18} className="sm:w-[22px] sm:h-[22px]" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-slate-900 text-[12px] sm:text-sm">Fine Cotton Quality</h3>
-            <p className="text-slate-500 text-[10px] sm:text-xs">Egyptian Cotton thread count & breathable comfort.</p>
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-3 sm:gap-4 bg-white border border-slate-205 p-3.5 sm:p-5 rounded-xl shadow-xs hover:shadow-sm transition-shadow">
-          <div className="p-2.5 bg-indigo-50 rounded-lg text-indigo-700 shrink-0">
-            <Activity size={18} className="sm:w-[22px] sm:h-[22px]" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-slate-900 text-[12px] sm:text-sm">Athletic Wear</h3>
-            <p className="text-slate-500 text-[10px] sm:text-xs">Sports textures, high performance gear & shoes.</p>
-          </div>
-        </div>
- 
-        <div className="flex items-center gap-3 sm:gap-4 bg-white border border-slate-205 p-3.5 sm:p-5 rounded-xl shadow-xs hover:shadow-sm transition-shadow">
-          <div className="p-2.5 bg-indigo-50 rounded-lg text-indigo-700 shrink-0">
-            <Award size={18} className="sm:w-[22px] sm:h-[22px]" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-slate-900 text-[12px] sm:text-sm">Fast Shipping & COD</h3>
-            <p className="text-slate-500 text-[10px] sm:text-xs">Easy Cash on Delivery & SSL secure payments.</p>
-          </div>
-        </div>
-      </div>
-    </div>
+      <motion.button
+        type="button"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1, duration: 0.6 }}
+        onClick={() =>
+          document.getElementById('store-grid-section')?.scrollIntoView({ behavior: 'smooth' })
+        }
+        className="absolute bottom-5 left-1/2 z-10 flex -translate-x-1/2 cursor-pointer flex-col items-center gap-1 text-[#b8b0a0]"
+        aria-label="Scroll to products"
+      >
+        <span className="text-[10px] font-bold uppercase tracking-[0.25em]">Shop all</span>
+        <motion.span
+          animate={{ y: [0, 6, 0] }}
+          transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+        >
+          <ArrowDown size={16} />
+        </motion.span>
+      </motion.button>
+    </section>
   );
 }

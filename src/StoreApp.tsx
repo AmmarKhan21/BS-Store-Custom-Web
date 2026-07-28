@@ -5,7 +5,7 @@ import { CATEGORIES } from './mockData';
 import { customerFetch, getCustomerProfile } from './lib/customerAuth';
 import { useCurrency } from './context/CurrencyContext';
 import { usePageMeta } from './hooks/usePageMeta';
-import BannerHero from './components/BannerHero';
+import CinematicExperience from './components/CinematicExperience';
 import ProductCard from './components/ProductCard';
 import ProductModal from './components/ProductModal';
 import CartDrawer from './components/CartDrawer';
@@ -329,105 +329,103 @@ export default function StoreApp() {
         variant="store"
         message="Loading products & prices…"
       />
-    <div className="min-h-screen bg-slate-50 font-sans selection:bg-indigo-100 flex flex-col justify-between">
+    <div className="min-h-screen bg-[#050d0b] font-sans selection:bg-[#c9a66b]/35 flex flex-col justify-between">
       
       {/* Toast Alert Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-[100] px-4 py-3 bg-slate-900 border border-slate-800 text-white text-xs font-semibold rounded-xl shadow-2xl flex items-center gap-2.5 animate-bounce">
-          <Sparkles size={14} className="text-indigo-400" />
+        <div className="fixed bottom-6 right-6 z-[100] px-4 py-3 bg-[#0e3d34] border border-[#1f6b55] text-[#f4efe6] text-xs font-semibold rounded-xl shadow-2xl flex items-center gap-2.5 animate-bounce">
+          <Sparkles size={14} className="text-[#e2c08a]" />
           <span>{toastMessage}</span>
         </div>
       )}
 
       {/* CORE PRIMARY NAVIGATION HEADER */}
-      <header className="sticky top-0 z-35 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 md:px-8 py-4 flex items-center justify-between" id="global-header">
+      <header className="fixed top-0 left-0 right-0 z-40 bg-transparent px-4 md:px-8 py-4 flex items-center justify-between mix-blend-normal" id="global-header">
+        <div className="absolute inset-0 bg-gradient-to-b from-[#050d0b]/90 via-[#050d0b]/50 to-transparent pointer-events-none" />
         
         {/* Brand Logo & slogan */}
         <div 
           onClick={() => {
             setActiveCategory('All');
             setSearchQuery('');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
           }} 
-          className="flex items-center gap-2.5 cursor-pointer"
+          className="relative z-10 flex items-center gap-2.5 cursor-pointer"
         >
-          <div className="w-9 h-9 md:w-11 md:h-11 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-base md:text-xl font-display shadow-md">
+          <div className="w-9 h-9 md:w-10 md:h-10 bg-[#c9a66b] rounded-lg flex items-center justify-center text-[#0a1a16] font-bold text-base md:text-lg font-display shadow-md">
             B
           </div>
-          <div>
-            <h1 className="font-display font-bold text-base md:text-xl text-slate-900 tracking-tight leading-none uppercase">Bismillah</h1>
-            <p className="text-[10px] md:text-xs text-indigo-700 font-bold tracking-widest mt-0.5 uppercase">Cotton & Sports Hub</p>
+          <div className="hidden sm:block">
+            <h1 className="font-display font-bold text-base md:text-lg text-[#f4efe6] tracking-tight leading-none">Bismillah</h1>
+            <p className="text-[9px] md:text-[10px] text-[#c9a66b] font-bold tracking-[0.2em] mt-0.5 uppercase">Cotton & Sports Hub</p>
           </div>
         </div>
 
         {/* Global Catalog search bar */}
-        <div className="hidden md:flex relative max-w-md w-full mx-8">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
+        <div className="relative z-10 hidden md:flex max-w-sm w-full mx-8">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#b8b0a0]" size={15} />
             <input
               type="text"
-              placeholder="Search soft cotton fabrics, sports wears, rackets, running shoes..."
+              placeholder="Search the house…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 font-medium transition-colors"
+              className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-full text-xs text-[#f4efe6] placeholder-[#8a857a] focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-[#c9a66b] font-medium transition-colors"
           />
         </div>
 
         {/* Cart Trigger Badge */}
-        <div className="flex items-center gap-3.5">
+        <div className="relative z-10 flex items-center gap-3.5">
           {customerName ? (
-            <Link to="/account" className="text-xs font-bold text-indigo-700 hover:text-indigo-900 flex items-center gap-1">
+            <Link to="/account" className="text-xs font-bold text-[#e2c08a] hover:text-[#f4efe6] flex items-center gap-1">
               <User size={14} /> {customerName.split(' ')[0]}
             </Link>
           ) : (
-            <Link to="/login" className="text-xs font-bold text-slate-600 hover:text-indigo-700 hidden sm:block">
+            <Link to="/login" className="text-xs font-bold text-[#b8b0a0] hover:text-[#f4efe6] hidden sm:block">
               Sign In
             </Link>
           )}
 
           <button
               onClick={() => setIsCartOpen(true)}
-              className="p-2.5 bg-slate-50 hover:bg-slate-100 text-slate-800 hover:text-indigo-700 rounded-xl border border-slate-200 relative transition-all cursor-pointer flex items-center gap-2"
+              className="p-2.5 bg-white/5 hover:bg-white/10 text-[#f4efe6] rounded-full border border-white/15 relative transition-all cursor-pointer flex items-center gap-2"
               title="Open Cart"
               aria-label="Shopping Cart"
             >
               <ShoppingBag size={16} />
-              <span className="hidden md:inline text-xs font-bold font-sans uppercase tracking-wider text-slate-700"></span>
-              <span className="absolute -top-1.5 -right-1.5 bg-indigo-600 text-white font-bold text-[10px] px-1.5 py-0.5 rounded-full ring-2 ring-white">
+              <span className="absolute -top-1.5 -right-1.5 bg-[#c9a66b] text-[#0a1a16] font-bold text-[10px] px-1.5 py-0.5 rounded-full ring-2 ring-[#050d0b]">
                 {cart.reduce((total, item) => total + item.quantity, 0)}
               </span>
             </button>
-
-          {/* <div className="text-[11px] font-semibold text-slate-500 bg-slate-100 py-1.5 px-3 rounded-lg border border-slate-200 hidden lg:block">
-            Support: <strong>COD & Online pay SSL</strong>
-          </div> */}
         </div>
       </header>
 
+      {/* Cinematic scroll story */}
+      <CinematicExperience
+        products={products}
+        onOpenProduct={handleOpenQuickView}
+        onSelectCategory={(cat) => {
+          setActiveCategory(cat);
+          const gridElement = document.getElementById('store-grid-section');
+          if (gridElement) {
+            gridElement.scrollIntoView({ behavior: 'smooth' });
+          }
+        }}
+      />
+
       {/* CUSTOMER STOREFRONT LAYOUT */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 md:px-8 py-6 space-y-8">
-          
-          {/* Slideshow Promotions and indicators */}
-          <BannerHero 
-            onSelectCategory={(cat) => {
-              setActiveCategory(cat);
-              const gridElement = document.getElementById('store-grid-section');
-              if (gridElement) {
-                gridElement.scrollIntoView({ behavior: 'smooth' });
-              }
-            }} 
-            activeCategory={activeCategory} 
-          />
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 md:px-8 py-10 space-y-8 bg-[#f4efe6] text-[#0e1f1c] rounded-t-[2rem] md:rounded-t-[3rem] relative z-10 -mt-6">
 
           {/* Grid control desk section */}
-          <div className="pt-4 border-t border-slate-200/60" id="store-grid-section">
+          <div className="pt-2" id="store-grid-section">
             
             {/* Section Header */}
-            <div className="w-full text-center md:text-left mb-6 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+            <div className="w-full text-center md:text-left mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4 pt-4">
               <div>
-                <span className="text-[10px] tracking-widest font-extrabold text-indigo-650 uppercase">Bismillah collections hub</span>
-                <h2 className="font-display font-black text-xl sm:text-2xl text-slate-900 tracking-tight mt-1">
-                  Shop by Categorized Collections
+                <span className="text-[10px] tracking-[0.28em] font-bold text-[#8b7355] uppercase">The atelier opens</span>
+                <h2 className="font-display font-semibold text-2xl sm:text-4xl text-[#0e1f1c] tracking-tight mt-1">
+                  Shop the collection
                 </h2>
-                <p className="text-xs text-slate-500 font-sans mt-0.5">Filter premier Traditional Egyptian Cotton fabrics, Polo wear & athletic training accessories</p>
+                <p className="text-sm text-[#5c6b66] font-sans mt-1">Egyptian cotton, polo wear & athletic essentials</p>
               </div>
 
               {/* Mobile Filter Trigger Button */}
@@ -799,11 +797,12 @@ export default function StoreApp() {
                   </div>
                 ) : (
                   /* Product Grid Display */
-                  <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5" id="storefront-product-grid">
-                    {sortedProducts.map((prod) => (
+                  <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5" id="storefront-product-grid" style={{ perspective: 1200 }}>
+                    {sortedProducts.map((prod, i) => (
                       <ProductCard 
                         key={prod.id} 
-                        product={prod} 
+                        product={prod}
+                        index={i}
                         onOpenQuickView={handleOpenQuickView} 
                         onAddToCartDirectly={handleAddToCartDirectly} 
                       />
