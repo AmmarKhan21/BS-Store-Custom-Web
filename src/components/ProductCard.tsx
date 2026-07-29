@@ -39,12 +39,12 @@ export default function ProductCard({
 
   const handleMove = (e: React.MouseEvent) => {
     const el = cardRef.current;
-    if (!el) return;
+    if (!el || window.matchMedia('(pointer: coarse)').matches) return;
     const rect = el.getBoundingClientRect();
     const px = (e.clientX - rect.left) / rect.width;
     const py = (e.clientY - rect.top) / rect.height;
-    rotateX.set((0.5 - py) * 14);
-    rotateY.set((px - 0.5) * 14);
+    rotateX.set((0.5 - py) * 6);
+    rotateY.set((px - 0.5) * 6);
   };
 
   const handleLeave = () => {
