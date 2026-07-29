@@ -82,7 +82,7 @@ function ChapterPanel({
 
   return (
     <motion.div
-      className={`absolute inset-0 flex flex-col justify-center ${className}`}
+      className={`absolute inset-0 flex flex-col justify-start lg:justify-center ${className}`}
       style={{ opacity, y, x, filter, scale, pointerEvents }}
     >
       {children}
@@ -109,7 +109,7 @@ function GoldRule({
   );
   return (
     <motion.div
-      className="mb-6 h-px origin-left bg-gradient-to-r from-[var(--site-gold)] via-[var(--site-gold-soft)] to-transparent"
+      className="mb-4 h-px origin-left bg-gradient-to-r from-[var(--site-gold)] via-[var(--site-gold-soft)] to-transparent lg:mb-6"
       style={{ width }}
     />
   );
@@ -359,8 +359,8 @@ export default function ScrollFrameHero({ products, onOpenProduct, onGoShop }: P
 
         <div className="relative z-10 mx-auto flex h-full w-full max-w-[1600px] flex-col lg:flex-row">
           {/* ── LEFT: animated copy ── */}
-          <aside className="relative z-20 flex h-[44%] w-full flex-col justify-center px-5 pb-2 pt-20 sm:px-10 lg:h-full lg:w-[44%] lg:justify-center lg:px-12 lg:pb-8 lg:pt-28 xl:px-16">
-            <div className="mb-4 flex items-center gap-2.5 sm:gap-3 lg:mb-8">
+          <aside className="relative z-20 flex w-full shrink-0 flex-col justify-start px-5 pb-3 pt-[4.5rem] sm:px-10 lg:h-full lg:w-[44%] lg:justify-center lg:px-12 lg:pb-8 lg:pt-28 xl:px-16">
+            <div className="mb-2.5 flex shrink-0 items-center gap-2.5 sm:gap-3 lg:mb-8">
               {chapters.map((roman, i) => (
                 <div key={roman} className="flex items-center gap-2.5 sm:gap-3">
                   <motion.span
@@ -383,7 +383,8 @@ export default function ScrollFrameHero({ products, onOpenProduct, onGoShop }: P
               </span>
             </div>
 
-            <div className="relative h-[min(38vh,280px)] w-full lg:h-[min(58vh,460px)]">
+            {/* Fixed content height on mobile so CTA isn’t floating over empty space */}
+            <div className="relative h-[236px] w-full sm:h-[260px] lg:h-[min(58vh,460px)]">
               <ChapterPanel progress={smoothProgress} enter={0} hold={0.18} exit={0.28}>
                 <GoldRule progress={smoothProgress} enter={0.02} exit={0.28} />
                 <p className="mb-3 text-[10px] font-bold tracking-[0.35em] text-[var(--site-gold)] uppercase">
@@ -444,7 +445,7 @@ export default function ScrollFrameHero({ products, onOpenProduct, onGoShop }: P
                     <button
                       type="button"
                       onClick={() => onOpenProduct(trophyProduct)}
-                      className="pointer-events-auto mt-6 w-fit rounded-full border border-[var(--site-gold)]/45 bg-[var(--site-surface)]/50 px-6 py-2.5 text-[11px] font-semibold tracking-[0.2em] text-[var(--site-gold)] uppercase backdrop-blur-sm transition hover:border-[var(--site-gold)] hover:bg-[var(--site-accent)]/25"
+                      className="pointer-events-auto mt-4 w-fit rounded-full border border-[var(--site-gold)]/45 bg-[var(--site-surface)]/50 px-6 py-2.5 text-[11px] font-semibold tracking-[0.2em] text-[var(--site-gold)] uppercase backdrop-blur-sm transition hover:border-[var(--site-gold)] hover:bg-[var(--site-accent)]/25 sm:mt-6"
                     >
                       View product
                     </button>
@@ -457,17 +458,17 @@ export default function ScrollFrameHero({ products, onOpenProduct, onGoShop }: P
                 <p className="mb-3 text-[10px] font-semibold tracking-[0.3em] text-[var(--site-gold)] uppercase">
                   The atelier awaits
                 </p>
-                <h2 className="font-display text-[2.1rem] font-medium text-[var(--site-ink)] sm:text-4xl">
+                <h2 className="font-display text-[1.85rem] font-medium leading-tight text-[var(--site-ink)] sm:text-4xl">
                   Shop the
                   <span className="block text-[var(--site-gold)]">collection</span>
                 </h2>
-                <p className="mt-4 max-w-sm text-[13px] leading-relaxed text-[var(--site-ink)]/80 sm:text-sm">
+                <p className="mt-3 max-w-sm text-[13px] leading-relaxed text-[var(--site-ink)]/80 sm:mt-4 sm:text-sm">
                   Egyptian cotton, polo wear & athletic essentials — and trophies built to shine.
                 </p>
                 <button
                   type="button"
                   onClick={onGoShop}
-                  className="pointer-events-auto group relative mt-7 w-fit overflow-hidden rounded-full site-cta-btn px-8 py-3.5 text-[11px] font-bold tracking-[0.22em] text-[var(--site-ink)] uppercase shadow-lg transition "
+                  className="pointer-events-auto group relative mt-3.5 w-fit overflow-hidden rounded-full site-cta-btn px-7 py-3 text-[11px] font-bold tracking-[0.22em] text-[var(--site-ink)] uppercase shadow-lg transition sm:mt-5 sm:px-8 sm:py-3.5"
                 >
                   <span className="relative z-10">Enter the store</span>
                   <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition duration-700 group-hover:translate-x-full" />
@@ -485,7 +486,7 @@ export default function ScrollFrameHero({ products, onOpenProduct, onGoShop }: P
           </aside>
 
           {/* ── RIGHT: trophy on same theme stage ── */}
-          <div className="relative h-[58%] w-full flex-1 lg:h-full lg:w-[56%]">
+          <div className="relative min-h-0 w-full flex-1 lg:h-full lg:w-[56%]">
             {/* Ambient gold pool behind trophy */}
             <div className="pointer-events-none absolute left-1/2 top-1/2 h-[70%] w-[70%] -translate-x-1/2 -translate-y-[46%] rounded-full bg-[radial-gradient(ellipse_at_center,var(--site-hero-glow-b),transparent_68%)]" />
 

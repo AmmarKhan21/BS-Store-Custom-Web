@@ -26,7 +26,7 @@
       "sizes": "[\"S\",\"M\",\"L\",\"XL\"]",
       "colors": "[\"#FFFFFF\",\"#F2F2F2\",\"#E1E6E1\"]",
       "rating": 4.9,
-      "stock": 24,
+      "stock": 21,
       "isFeatured": 1,
       "dateAdded": "2026-05-20"
     },
@@ -86,7 +86,7 @@
       "sizes": "[\"S\",\"M\",\"L\",\"XL\",\"XXL\"]",
       "colors": "[\"#FFFFFF\",\"#000000\",\"#eedbc5\"]",
       "rating": 5,
-      "stock": 29,
+      "stock": 28,
       "isFeatured": 1,
       "dateAdded": "2026-06-24"
     },
@@ -248,6 +248,28 @@
       "status": "Pending",
       "date": "2026-06-24T06:37:09.638Z",
       "notes": "integration test"
+    },
+    {
+      "id": "ORD-8693",
+      "customerId": null,
+      "customerName": "Ammar Younas khan",
+      "customerEmail": "khanammar668@gmail.com",
+      "customerPhone": "+923244726886",
+      "shippingAddress": "Tajpura",
+      "city": "Lahore",
+      "postalCode": "567888",
+      "items": "[{\"productId\":\"prod-1782281506502\",\"productName\":\"1232as\",\"price\":66920,\"quantity\":1,\"selectedSize\":\"S\",\"selectedColor\":\"#FFFFFF\",\"image\":\"https://images.unsplash.com/photo-1544441893-675973e31985?q=80&w=700&auto=format&fit=crop\"},{\"productId\":\"prod-2\",\"productName\":\"Classic White Soft Cotton Shalwar Kameez\",\"price\":13720,\"quantity\":3,\"selectedSize\":\"S\",\"selectedColor\":\"#FFFFFF\",\"image\":\"https://images.unsplash.com/photo-1607345366928-199ea26cfe3e?q=80&w=700&auto=format&fit=crop\"}]",
+      "subtotal": 108080,
+      "discount": 0,
+      "total": 108080,
+      "currency": "PKR",
+      "paymentMethod": "COD",
+      "paymentStatus": "Pending",
+      "status": "Pending",
+      "date": "2026-07-29T11:09:36.526Z",
+      "notes": null,
+      "paymentRef": null,
+      "stockDeducted": true
     }
   ],
   "categories": [
