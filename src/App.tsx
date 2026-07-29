@@ -1,6 +1,8 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { CurrencyProvider } from './context/CurrencyContext';
+import { SiteThemeProvider } from './context/SiteThemeContext';
+import SiteShell from './components/SiteShell';
 import StoreApp from './StoreApp';
 import AdminApp from './AdminApp';
 import ProductDetailPage from './pages/ProductDetailPage';
@@ -19,17 +21,25 @@ export default function App() {
     <CurrencyProvider autoDetectOnly>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<StoreApp />} />
-          <Route path="/product/:id" element={<ProductDetailPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/account" element={<AccountPage />} />
-          <Route path="/account/orders/:id" element={<OrderDetailPage />} />
-          <Route path="/privacy" element={<PrivacyPage />} />
-          <Route path="/terms" element={<TermsPage />} />
-          <Route path="/contact" element={<ContactPage />} />
-          <Route path="/order/success" element={<OrderSuccessPage />} />
-          <Route path="/order/failed" element={<OrderFailedPage />} />
+          <Route
+            element={
+              <SiteThemeProvider>
+                <SiteShell />
+              </SiteThemeProvider>
+            }
+          >
+            <Route path="/" element={<StoreApp />} />
+            <Route path="/product/:id" element={<ProductDetailPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/account" element={<AccountPage />} />
+            <Route path="/account/orders/:id" element={<OrderDetailPage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/terms" element={<TermsPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+            <Route path="/order/success" element={<OrderSuccessPage />} />
+            <Route path="/order/failed" element={<OrderFailedPage />} />
+          </Route>
           <Route path="/admin/login" element={<AdminApp />} />
           <Route path="/admin/*" element={<AdminApp />} />
           <Route path="*" element={<Navigate to="/" replace />} />

@@ -31,9 +31,9 @@ export const SITE_THEMES: SiteThemeMeta[] = [
   {
     id: 'champagne',
     name: 'Champagne Atelier',
-    tagline: 'Warm sand stage, bronze metal, soft cream',
-    mood: 'Warm',
-    swatches: ['#1a1510', '#8b6914', '#c4a574', '#f7f0e6'],
+    tagline: 'Light cream stage, bronze metal, soft sand',
+    mood: 'Light',
+    swatches: ['#f3ebe0', '#8b6914', '#c4a574', '#1c1712'],
   },
   {
     id: 'arctic',

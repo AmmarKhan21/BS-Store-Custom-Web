@@ -170,6 +170,12 @@ h1, h2, h3, h4, h5, h6, .font-display {
 
 [data-site-theme] {
   --site-radius: 1.25rem;
+  --site-field-bg: var(--site-surface-2);
+  --site-placeholder: color-mix(in srgb, var(--site-ink) 52%, transparent);
+  --site-cta-ink: var(--site-ink);
+  --site-overlay: rgba(0, 0, 0, 0.55);
+  --site-panel: var(--site-surface);
+  --site-on-accent: #ffffff;
   color: var(--site-ink);
   background: var(--site-bg);
   transition: background 0.5s ease, color 0.4s ease;
@@ -251,31 +257,37 @@ h1, h2, h3, h4, h5, h6, .font-display {
   --site-cta: linear-gradient(135deg, #2a4a7a, #3d6eb5);
 }
 
-/* 3 · Champagne Atelier */
+/* 3 · Champagne Atelier — light cream stage */
 [data-site-theme='champagne'] {
-  --site-bg: #1a1510;
-  --site-surface: #241e17;
-  --site-surface-2: #2e261d;
-  --site-surface-soft: #14110d;
-  --site-ink: #f7f0e6;
-  --site-muted: #a89a88;
-  --site-gold: #c4a574;
-  --site-gold-soft: #e2c9a0;
-  --site-accent: #a67c2d;
-  --site-border: rgba(196, 165, 116, 0.2);
-  --site-pill: rgba(196, 165, 116, 0.12);
-  --site-pill-active-bg: #c4a574;
-  --site-pill-active-fg: #1a1510;
-  --site-img-bg: #1c1712;
-  --site-nav-solid: rgba(26, 21, 16, 0.92);
-  --site-hero-glow-a: rgba(166, 124, 45, 0.22);
-  --site-hero-glow-b: rgba(226, 201, 160, 0.14);
-  --site-shadow: 0 24px 60px -28px rgba(0, 0, 0, 0.6);
-  --site-card-shadow: 0 16px 40px -20px rgba(0, 0, 0, 0.5);
-  --site-glow: radial-gradient(ellipse 70% 50% at 75% 5%, rgba(196, 165, 116, 0.2), transparent 55%),
+  --site-bg: #f3ebe0;
+  --site-surface: #fffcf7;
+  --site-surface-2: #ebe2d4;
+  --site-surface-soft: #ebe4d8;
+  --site-ink: #1c1712;
+  --site-muted: #6f6458;
+  --site-placeholder: #8a7d6f;
+  --site-gold: #9a7340;
+  --site-gold-soft: #c4a574;
+  --site-accent: #8b6914;
+  --site-border: rgba(28, 23, 18, 0.12);
+  --site-pill: rgba(154, 115, 64, 0.12);
+  --site-pill-active-bg: #1c1712;
+  --site-pill-active-fg: #f7f0e6;
+  --site-img-bg: #e5dccf;
+  --site-nav-solid: rgba(243, 235, 224, 0.95);
+  --site-hero-glow-a: rgba(166, 124, 45, 0.18);
+  --site-hero-glow-b: rgba(196, 165, 116, 0.22);
+  --site-shadow: 0 24px 60px -28px rgba(28, 23, 18, 0.18);
+  --site-card-shadow: 0 16px 40px -20px rgba(28, 23, 18, 0.12);
+  --site-glow: radial-gradient(ellipse 70% 50% at 75% 5%, rgba(196, 165, 116, 0.28), transparent 55%),
     radial-gradient(ellipse 50% 40% at 10% 90%, rgba(166, 124, 45, 0.12), transparent 50%);
   --site-progress: linear-gradient(90deg, #8b6914, #c4a574, #e2c9a0);
   --site-cta: linear-gradient(135deg, #8b6914, #c4a574);
+  --site-cta-ink: #1c1712;
+  --site-field-bg: #fffcf7;
+  --site-overlay: rgba(28, 23, 18, 0.4);
+  --site-panel: #fffcf7;
+  --site-on-accent: #ffffff;
 }
 
 /* 4 · Arctic Steel */
@@ -423,15 +435,82 @@ h1, h2, h3, h4, h5, h6, .font-display {
 }
 
 [data-site-theme] .store-input {
-  background: var(--store-surface-2);
+  background: var(--site-field-bg);
   border: 1px solid var(--store-border);
   color: var(--store-ink);
+  caret-color: var(--site-gold);
+}
+
+[data-site-theme] .store-input::placeholder {
+  color: var(--site-placeholder);
+  opacity: 1;
 }
 
 [data-site-theme] .store-input:focus {
   border-color: color-mix(in srgb, var(--store-accent) 55%, transparent);
   outline: none;
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--store-accent) 22%, transparent);
+  background: var(--site-field-bg);
+  color: var(--store-ink);
+}
+
+/* Shared form control — works on light & dark themes */
+[data-site-theme] .site-input {
+  width: 100%;
+  background: var(--site-field-bg);
+  border: 1px solid var(--site-border);
+  color: var(--site-ink);
+  caret-color: var(--site-gold);
+  border-radius: 0.75rem;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+[data-site-theme] .site-input::placeholder {
+  color: var(--site-placeholder);
+  opacity: 1;
+}
+
+[data-site-theme] .site-input:focus {
+  border-color: color-mix(in srgb, var(--site-gold) 55%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--site-gold) 22%, transparent);
+  background: var(--site-field-bg);
+  color: var(--site-ink);
+}
+
+[data-site-theme] .site-input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+[data-site-theme] select.site-input {
+  color: var(--site-ink);
+}
+
+[data-site-theme] select.site-input option {
+  background: var(--site-surface);
+  color: var(--site-ink);
+}
+
+[data-site-theme] .site-panel {
+  background: var(--site-panel);
+  border: 1px solid var(--site-border);
+  color: var(--site-ink);
+  box-shadow: var(--site-shadow);
+}
+
+[data-site-theme] .site-btn-primary {
+  background: var(--site-cta);
+  color: var(--site-cta-ink);
+}
+
+[data-site-theme] .site-btn-accent {
+  background: var(--site-accent);
+  color: var(--site-on-accent);
+}
+
+[data-site-theme] .site-overlay {
+  background: var(--site-overlay);
 }
 
 [data-site-theme] .store-chip {
@@ -457,7 +536,7 @@ h1, h2, h3, h4, h5, h6, .font-display {
 }
 [data-site-theme] .site-cta-btn {
   background: var(--site-cta);
-  color: var(--site-ink);
+  color: var(--site-cta-ink);
 }
 
 @media (prefers-reduced-motion: reduce) {

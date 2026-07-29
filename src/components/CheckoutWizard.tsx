@@ -161,18 +161,18 @@ export default function CheckoutWizard({ cartItems, appliedCoupon, onClose, onSu
 
   return (
     <div 
-      className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-2.5 sm:p-4 md:p-6"
+      className="fixed inset-0 z-[100] overflow-y-auto site-overlay backdrop-blur-sm flex items-center justify-center p-2.5 sm:p-4 md:p-6"
       id="checkout-wizard-modal"
     >
-      <div className="bg-white w-full max-w-3xl rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl border border-slate-205 flex flex-col relative max-h-[95vh] sm:max-h-[92vh]">
+      <div className="site-panel bg-[var(--site-panel)] w-full max-w-3xl rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl border border-[var(--site-border)] flex flex-col relative max-h-[95vh] sm:max-h-[92vh] text-[var(--site-ink)]">
         
         {/* Header containing progress tracks */}
-        <div className="px-6 py-5 border-b border-slate-200 bg-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="px-6 py-5 border-b border-[var(--site-border)] bg-[var(--site-surface-2)] flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h2 className="font-display font-bold text-lg text-slate-900 uppercase tracking-wider">
+            <h2 className="font-display font-bold text-lg text-[var(--site-ink)] uppercase tracking-wider">
               {step === 3 ? '🎉 Order Placed Successfully!' : '⚡ Secure Express Checkout'}
             </h2>
-            <p className="text-xs text-slate-500 font-sans">
+            <p className="text-xs text-[var(--site-muted)] font-sans">
               {step === 1 && 'Fill in your contact and physical shipping details'}
               {step === 2 && 'Review your basket metrics & select settlement method'}
               {step === 3 && 'Double-check receipt parameters and delivery windows'}
@@ -182,19 +182,19 @@ export default function CheckoutWizard({ cartItems, appliedCoupon, onClose, onSu
           {/* Progress Indicators */}
           <div className="flex items-center gap-2 text-xs font-semibold shrink-0">
             <span className={`w-6 h-6 rounded-full flex items-center justify-center border ${
-              step >= 1 ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-400 border-slate-200'
+              step >= 1 ? 'bg-[var(--site-accent)] text-[var(--site-on-accent)] border-[var(--site-accent)]' : 'bg-[var(--site-surface)] text-[var(--site-muted)] border-[var(--site-border)]'
             }`}>
               1
             </span>
-            <span className="w-6 h-0.5 bg-slate-200" />
+            <span className="w-6 h-0.5 bg-[var(--site-border)]" />
             <span className={`w-6 h-6 rounded-full flex items-center justify-center border ${
-              step >= 2 ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-400 border-slate-200'
+              step >= 2 ? 'bg-[var(--site-accent)] text-[var(--site-on-accent)] border-[var(--site-accent)]' : 'bg-[var(--site-surface)] text-[var(--site-muted)] border-[var(--site-border)]'
             }`}>
               2
             </span>
-            <span className="w-6 h-0.5 bg-slate-200" />
+            <span className="w-6 h-0.5 bg-[var(--site-border)]" />
             <span className={`w-6 h-6 rounded-full flex items-center justify-center border ${
-              step === 3 ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-400 border-slate-200'
+              step === 3 ? 'bg-[var(--site-accent)] text-[var(--site-on-accent)] border-[var(--site-accent)]' : 'bg-[var(--site-surface)] text-[var(--site-muted)] border-[var(--site-border)]'
             }`}>
               3
             </span>
@@ -217,13 +217,13 @@ export default function CheckoutWizard({ cartItems, appliedCoupon, onClose, onSu
             {/* STEP 1: SHIPPING & CONTACT DETAILS */}
             {step === 1 && (
               <form onSubmit={handleProceedToPayment} className="space-y-4">
-                <h3 className="font-display font-bold text-sm text-slate-900 uppercase tracking-widest border-b border-slate-200 pb-2 mb-3">
+                <h3 className="font-display font-bold text-sm text-[var(--site-ink)] uppercase tracking-widest border-b border-[var(--site-border)] pb-2 mb-3">
                   1. Contact Information & Delivery Address
                 </h3>
 
                 <div className="space-y-3.5 text-xs">
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                    <label className="block text-[10px] font-bold text-[var(--site-muted)] uppercase tracking-wider mb-1">
                       Full Customer Name *
                     </label>
                     <input
@@ -232,13 +232,13 @@ export default function CheckoutWizard({ cartItems, appliedCoupon, onClose, onSu
                       value={shippingName}
                       onChange={(e) => setShippingName(e.target.value)}
                       placeholder="e.g. Ammar Younas"
-                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-1 focus:ring-indigo-500 font-medium"
+                      className="site-input p-3 text-xs font-medium"
                     />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                      <label className="block text-[10px] font-bold text-[var(--site-muted)] uppercase tracking-wider mb-1">
                         Email Address *
                       </label>
                       <input
@@ -247,11 +247,11 @@ export default function CheckoutWizard({ cartItems, appliedCoupon, onClose, onSu
                         value={shippingEmail}
                         onChange={(e) => setShippingEmail(e.target.value)}
                         placeholder="ammar@example.com"
-                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-1 focus:ring-indigo-500 font-medium"
+                        className="site-input p-3 text-xs font-medium"
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                      <label className="block text-[10px] font-bold text-[var(--site-muted)] uppercase tracking-wider mb-1">
                         Mobile Phone Number *
                       </label>
                       <input
@@ -260,13 +260,13 @@ export default function CheckoutWizard({ cartItems, appliedCoupon, onClose, onSu
                         value={shippingPhone}
                         onChange={(e) => setShippingPhone(e.target.value)}
                         placeholder="e.g. +92 300 1234567"
-                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-1 focus:ring-indigo-500 font-medium"
+                        className="site-input p-3 text-xs font-medium"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                    <label className="block text-[10px] font-bold text-[var(--site-muted)] uppercase tracking-wider mb-1">
                       Detailed Shipping Address (Apartment, Street, Area) *
                     </label>
                     <input
@@ -275,19 +275,19 @@ export default function CheckoutWizard({ cartItems, appliedCoupon, onClose, onSu
                       value={shippingAddress}
                       onChange={(e) => setShippingAddress(e.target.value)}
                       placeholder="e.g. House 42, Street 7, Sector F-11"
-                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-1 focus:ring-indigo-500 font-medium"
+                      className="site-input p-3 text-xs font-medium"
                     />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                      <label className="block text-[10px] font-bold text-[var(--site-muted)] uppercase tracking-wider mb-1">
                         Shipping City *
                       </label>
                       <select
                         value={shippingCity}
                         onChange={(e) => setShippingCity(e.target.value)}
-                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-1 focus:ring-indigo-500 font-medium"
+                        className="site-input p-3 text-xs font-medium"
                       >
                         <option value="Lahore">Lahore</option>
                         <option value="Karachi">Karachi</option>
@@ -301,7 +301,7 @@ export default function CheckoutWizard({ cartItems, appliedCoupon, onClose, onSu
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                      <label className="block text-[10px] font-bold text-[var(--site-muted)] uppercase tracking-wider mb-1">
                         Postal Code *
                       </label>
                       <input
@@ -310,13 +310,13 @@ export default function CheckoutWizard({ cartItems, appliedCoupon, onClose, onSu
                         value={shippingPostal}
                         onChange={(e) => setShippingPostal(e.target.value)}
                         placeholder="e.g. 54000"
-                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-1 focus:ring-indigo-500 font-medium"
+                        className="site-input p-3 text-xs font-medium"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                    <label className="block text-[10px] font-bold text-[var(--site-muted)] uppercase tracking-wider mb-1">
                       Additional Delivery Notes (Optional)
                     </label>
                     <textarea
@@ -324,16 +324,16 @@ export default function CheckoutWizard({ cartItems, appliedCoupon, onClose, onSu
                       onChange={(e) => setOrderNotes(e.target.value)}
                       placeholder="e.g., Please deliver after 2:30 PM, call upon arrival, fabric packaging specifications..."
                       rows={2}
-                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-1 focus:ring-indigo-500 italic resize-none"
+                      className="site-input p-3 text-xs font-medium italic resize-none"
                     />
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row justify-between gap-3">
+                <div className="pt-4 border-t border-[var(--site-border)] flex flex-col sm:flex-row justify-between gap-3">
                   <button
                     type="button"
                     onClick={onClose}
-                    className="px-5 py-3 border border-slate-300 hover:border-slate-400 text-slate-700 text-xs font-semibold rounded-lg uppercase tracking-wider cursor-pointer bg-white"
+                    className="px-5 py-3 border border-[var(--site-border)] hover:border-[var(--site-gold-soft)] text-[var(--site-ink)] text-xs font-semibold rounded-lg uppercase tracking-wider cursor-pointer bg-[var(--site-surface)]"
                   >
                     Cancel
                   </button>
@@ -342,8 +342,8 @@ export default function CheckoutWizard({ cartItems, appliedCoupon, onClose, onSu
                     disabled={!canProceedToPayment}
                     className={`px-6 py-3 text-xs font-bold rounded-lg uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all ${
                       canProceedToPayment
-                        ? 'bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer shadow-md hover:shadow-lg'
-                        : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                        ? 'site-btn-primary cursor-pointer shadow-md hover:shadow-lg'
+                        : 'bg-[var(--site-surface-2)] text-[var(--site-muted)] cursor-not-allowed'
                     }`}
                   >
                     <span>Proceed to Payment</span>
@@ -351,7 +351,7 @@ export default function CheckoutWizard({ cartItems, appliedCoupon, onClose, onSu
                   </button>
                 </div>
                 {!canProceedToPayment && (
-                  <p className="text-[10px] text-slate-400 text-right">
+                  <p className="text-[10px] text-[var(--site-muted)] text-right">
                     Fill all required fields to continue
                   </p>
                 )}
@@ -361,53 +361,53 @@ export default function CheckoutWizard({ cartItems, appliedCoupon, onClose, onSu
             {/* STEP 2: PAYMENT METHOD DEPLOYMENT */}
             {step === 2 && (
               <form onSubmit={handlePlaceOrder} className="space-y-5">
-                <h3 className="font-display font-bold text-sm text-slate-900 uppercase tracking-widest border-b border-slate-200 pb-2 mb-3">
+                <h3 className="font-display font-bold text-sm text-[var(--site-ink)] uppercase tracking-widest border-b border-[var(--site-border)] pb-2 mb-3">
                   2. Choose Payment Settlement Method
                 </h3>
 
                 <div className="grid grid-cols-1 gap-3">
-                  <button type="button" onClick={() => setPaymentMethod('COD')} className={`p-4 border-2 rounded-xl text-left flex items-start gap-3 transition-all ${paymentMethod === 'COD' ? 'border-indigo-600 bg-indigo-50' : 'border-slate-200 hover:border-indigo-300'}`}>
-                    <Truck size={22} className={paymentMethod === 'COD' ? 'text-indigo-600' : 'text-slate-500'} />
+                  <button type="button" onClick={() => setPaymentMethod('COD')} className={`p-4 border-2 rounded-xl text-left flex items-start gap-3 transition-all ${paymentMethod === 'COD' ? 'border-[var(--site-gold)] bg-[color-mix(in_srgb,var(--site-gold)_12%,transparent)]' : 'border-[var(--site-border)] hover:border-[var(--site-gold-soft)]'}`}>
+                    <Truck size={22} className={paymentMethod === 'COD' ? 'text-[var(--site-gold)]' : 'text-[var(--site-muted)]'} />
                     <div>
-                      <h4 className="font-bold text-sm">Cash on Delivery</h4>
-                      <p className="text-xs text-slate-600">Pay when your order arrives</p>
+                      <h4 className="font-bold text-sm text-[var(--site-ink)]">Cash on Delivery</h4>
+                      <p className="text-xs text-[var(--site-muted)]">Pay when your order arrives</p>
                     </div>
-                    {paymentMethod === 'COD' && <Check size={16} className="text-indigo-600 ml-auto" />}
+                    {paymentMethod === 'COD' && <Check size={16} className="text-[var(--site-gold)] ml-auto" />}
                   </button>
 
-                  <button type="button" onClick={() => setPaymentMethod('PAYFAST')} className={`p-4 border-2 rounded-xl text-left flex items-start gap-3 transition-all ${paymentMethod === 'PAYFAST' ? 'border-indigo-600 bg-indigo-50' : 'border-slate-200 hover:border-indigo-300'}`}>
-                    <CreditCard size={22} className={paymentMethod === 'PAYFAST' ? 'text-indigo-600' : 'text-slate-500'} />
+                  <button type="button" onClick={() => setPaymentMethod('PAYFAST')} className={`p-4 border-2 rounded-xl text-left flex items-start gap-3 transition-all ${paymentMethod === 'PAYFAST' ? 'border-[var(--site-gold)] bg-[color-mix(in_srgb,var(--site-gold)_12%,transparent)]' : 'border-[var(--site-border)] hover:border-[var(--site-gold-soft)]'}`}>
+                    <CreditCard size={22} className={paymentMethod === 'PAYFAST' ? 'text-[var(--site-gold)]' : 'text-[var(--site-muted)]'} />
                     <div>
-                      <h4 className="font-bold text-sm">PayFast</h4>
-                      <p className="text-xs text-slate-600">Cards, Raast & bank — via PayFast Pakistan</p>
+                      <h4 className="font-bold text-sm text-[var(--site-ink)]">PayFast</h4>
+                      <p className="text-xs text-[var(--site-muted)]">Cards, Raast & bank — via PayFast Pakistan</p>
                     </div>
-                    {paymentMethod === 'PAYFAST' && <Check size={16} className="text-indigo-600 ml-auto" />}
+                    {paymentMethod === 'PAYFAST' && <Check size={16} className="text-[var(--site-gold)] ml-auto" />}
                   </button>
 
-                  <button type="button" onClick={() => setPaymentMethod('JAZZCASH')} className={`p-4 border-2 rounded-xl text-left flex items-start gap-3 transition-all ${paymentMethod === 'JAZZCASH' ? 'border-indigo-600 bg-indigo-50' : 'border-slate-200 hover:border-indigo-300'}`}>
-                    <Smartphone size={22} className={paymentMethod === 'JAZZCASH' ? 'text-indigo-600' : 'text-slate-500'} />
+                  <button type="button" onClick={() => setPaymentMethod('JAZZCASH')} className={`p-4 border-2 rounded-xl text-left flex items-start gap-3 transition-all ${paymentMethod === 'JAZZCASH' ? 'border-[var(--site-gold)] bg-[color-mix(in_srgb,var(--site-gold)_12%,transparent)]' : 'border-[var(--site-border)] hover:border-[var(--site-gold-soft)]'}`}>
+                    <Smartphone size={22} className={paymentMethod === 'JAZZCASH' ? 'text-[var(--site-gold)]' : 'text-[var(--site-muted)]'} />
                     <div>
-                      <h4 className="font-bold text-sm">JazzCash</h4>
-                      <p className="text-xs text-slate-600">Mobile wallet & card via JazzCash</p>
+                      <h4 className="font-bold text-sm text-[var(--site-ink)]">JazzCash</h4>
+                      <p className="text-xs text-[var(--site-muted)]">Mobile wallet & card via JazzCash</p>
                     </div>
-                    {paymentMethod === 'JAZZCASH' && <Check size={16} className="text-indigo-600 ml-auto" />}
+                    {paymentMethod === 'JAZZCASH' && <Check size={16} className="text-[var(--site-gold)] ml-auto" />}
                   </button>
                 </div>
 
                 {(paymentMethod === 'PAYFAST' || paymentMethod === 'JAZZCASH') && (
-                  <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-xl text-xs text-indigo-800 flex items-center gap-2">
-                    <ShieldCheck size={14} />
+                  <div className="p-4 bg-[color-mix(in_srgb,var(--site-gold)_12%,transparent)] border border-[var(--site-gold)] rounded-xl text-xs text-[var(--site-ink)] flex items-center gap-2">
+                    <ShieldCheck size={14} className="text-[var(--site-gold)]" />
                     You will be redirected to {paymentMethod === 'PAYFAST' ? 'PayFast' : 'JazzCash'} secure checkout to complete payment.
                   </div>
                 )}
 
                 {/* Processing/Submit panels */}
-                <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row justify-between gap-3">
+                <div className="pt-4 border-t border-[var(--site-border)] flex flex-col sm:flex-row justify-between gap-3">
                   <button
                     type="button"
                     disabled={isProcessing}
                     onClick={() => setStep(1)}
-                    className="px-5 py-3 border border-slate-300 hover:border-slate-400 text-slate-700 text-xs font-semibold rounded-lg uppercase tracking-wider cursor-pointer flex items-center justify-center gap-1 bg-white disabled:opacity-50"
+                    className="px-5 py-3 border border-[var(--site-border)] hover:border-[var(--site-gold-soft)] text-[var(--site-ink)] text-xs font-semibold rounded-lg uppercase tracking-wider cursor-pointer flex items-center justify-center gap-1 bg-[var(--site-surface)] disabled:opacity-50"
                   >
                     <ArrowLeft size={13} />
                     <span>Back</span>
@@ -418,10 +418,10 @@ export default function CheckoutWizard({ cartItems, appliedCoupon, onClose, onSu
                     disabled={isProcessing || !canPlaceOrder}
                     className={`px-6 py-3.5 text-sm font-bold rounded-lg uppercase tracking-wide flex items-center justify-center gap-2 min-w-[200px] transition-all ${
                       isProcessing
-                        ? 'bg-indigo-500 text-white cursor-wait'
+                        ? 'bg-[var(--site-cta)] text-[var(--site-cta-ink)] cursor-wait opacity-80'
                         : canPlaceOrder
-                          ? 'bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer shadow-lg hover:shadow-xl ring-2 ring-indigo-300'
-                          : 'bg-slate-200 text-slate-500 cursor-not-allowed'
+                          ? 'site-btn-primary cursor-pointer shadow-lg hover:shadow-xl'
+                          : 'bg-[var(--site-surface-2)] text-[var(--site-muted)] cursor-not-allowed'
                     }`}
                   >
                     {isProcessing ? (
@@ -453,46 +453,46 @@ export default function CheckoutWizard({ cartItems, appliedCoupon, onClose, onSu
                 </div>
                 
                 <div>
-                  <h3 className="font-display font-bold text-xl text-slate-900 uppercase tracking-wide">
+                  <h3 className="font-display font-bold text-xl text-[var(--site-ink)] uppercase tracking-wide">
                     Excellent choice, {createdOrder.customerName}!
                   </h3>
-                  <p className="text-xs text-slate-500 mt-1 font-sans">
+                  <p className="text-xs text-[var(--site-muted)] mt-1 font-sans">
                     We have received your custom order basket and forwarded packing guidelines to our cotton warehouse.
                   </p>
                 </div>
 
-                <div className="p-5 bg-slate-50 border border-slate-250 rounded-xl text-slate-800 text-left space-y-4">
-                  <div className="flex justify-between items-center bg-slate-200/50 p-2.5 rounded-lg border border-slate-200 text-xs">
-                    <span className="font-bold text-slate-900">TRACKING ORDER ID:</span>
-                    <span className="font-mono text-indigo-900 font-bold bg-white px-2 py-0.5 rounded shadow-xs">
+                <div className="p-5 bg-[var(--site-surface-2)] border border-[var(--site-border)] rounded-xl text-[var(--site-ink)] text-left space-y-4">
+                  <div className="flex justify-between items-center bg-[var(--site-surface)] p-2.5 rounded-lg border border-[var(--site-border)] text-xs">
+                    <span className="font-bold text-[var(--site-ink)]">TRACKING ORDER ID:</span>
+                    <span className="font-mono text-[var(--site-gold)] font-bold bg-[var(--site-panel)] px-2 py-0.5 rounded shadow-xs">
                       {createdOrder.id}
                     </span>
                   </div>
 
                   {/* Summary parameters */}
-                  <div className="space-y-2 text-xs border-b border-slate-200 pb-3">
+                  <div className="space-y-2 text-xs border-b border-[var(--site-border)] pb-3">
                     <div className="flex justify-between">
-                      <span className="text-slate-500">Contact Email:</span>
-                      <span className="font-semibold text-slate-900">{createdOrder.customerEmail}</span>
+                      <span className="text-[var(--site-muted)]">Contact Email:</span>
+                      <span className="font-semibold text-[var(--site-ink)]">{createdOrder.customerEmail}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-500">Shipping Location:</span>
-                      <span className="font-semibold text-slate-900 text-right max-w-[210px] line-clamp-1">{createdOrder.shippingAddress}, {createdOrder.city}</span>
+                      <span className="text-[var(--site-muted)]">Shipping Location:</span>
+                      <span className="font-semibold text-[var(--site-ink)] text-right max-w-[210px] line-clamp-1">{createdOrder.shippingAddress}, {createdOrder.city}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-500">Selected Settlement:</span>
-                      <span className="font-bold text-slate-850 uppercase bg-indigo-50 border border-indigo-200 px-1.5 rounded-sm">
+                      <span className="text-[var(--site-muted)]">Selected Settlement:</span>
+                      <span className="font-bold text-[var(--site-ink)] uppercase bg-[color-mix(in_srgb,var(--site-gold)_12%,transparent)] border border-[var(--site-gold)] px-1.5 rounded-sm">
                         {createdOrder.paymentMethod === 'COD' ? 'Cash on Delivery (COD)' : 'Online Card Verified'}
                       </span>
                     </div>
                   </div>
 
                   {/* Estimated Delivery time frame */}
-                  <div className="flex items-center gap-3 bg-indigo-50/40 p-3 rounded-lg border border-indigo-200/60 font-sans">
-                    <Truck size={18} className="text-indigo-600 shrink-0" />
+                  <div className="flex items-center gap-3 bg-[color-mix(in_srgb,var(--site-gold)_10%,transparent)] p-3 rounded-lg border border-[var(--site-gold-soft)] font-sans">
+                    <Truck size={18} className="text-[var(--site-gold)] shrink-0" />
                     <div className="text-[11px]">
-                      <h4 className="font-bold text-indigo-900">Estimated Dispatch: tomorrow morning</h4>
-                      <p className="text-slate-500">Our delivery partner usually contacts you 1 hour before dropping off items.</p>
+                      <h4 className="font-bold text-[var(--site-ink)]">Estimated Dispatch: tomorrow morning</h4>
+                      <p className="text-[var(--site-muted)]">Our delivery partner usually contacts you 1 hour before dropping off items.</p>
                     </div>
                   </div>
                 </div>
@@ -500,7 +500,7 @@ export default function CheckoutWizard({ cartItems, appliedCoupon, onClose, onSu
                 <div className="pt-4 flex justify-center gap-4">
                   <button
                     onClick={onClose}
-                    className="px-6 py-3 bg-slate-900 hover:bg-slate-950 text-white text-xs font-bold rounded-lg uppercase tracking-wider cursor-pointer hover:shadow-md transition-colors"
+                    className="site-btn-primary px-6 py-3 text-xs font-bold rounded-lg uppercase tracking-wider cursor-pointer hover:shadow-md transition-colors"
                   >
                     Return to Storefront Catalog
                   </button>
@@ -511,10 +511,10 @@ export default function CheckoutWizard({ cartItems, appliedCoupon, onClose, onSu
           </div>
 
           {/* RIGHT COLUMN: Interactive Summary Basket Card */}
-          <div className="w-full md:w-76 shrink-0 bg-slate-50 border border-slate-200 rounded-xl p-5 flex flex-col justify-between max-h-[380px] md:max-h-none">
+          <div className="w-full md:w-76 shrink-0 bg-[var(--site-surface-2)] border border-[var(--site-border)] rounded-xl p-5 flex flex-col justify-between max-h-[380px] md:max-h-none">
             <div>
-              <div className="flex items-center gap-1.5 border-b border-slate-200 pb-3 mb-4 text-slate-800">
-                <ShoppingBag size={14} className="text-indigo-600" />
+              <div className="flex items-center gap-1.5 border-b border-[var(--site-border)] pb-3 mb-4 text-[var(--site-ink)]">
+                <ShoppingBag size={14} className="text-[var(--site-gold)]" />
                 <h4 className="font-bold uppercase tracking-wider text-[10px] font-display">Basket Summary</h4>
               </div>
 
@@ -525,25 +525,25 @@ export default function CheckoutWizard({ cartItems, appliedCoupon, onClose, onSu
                     <img 
                       src={item.product.images[0]} 
                       alt="" 
-                      className="w-10 h-10 object-cover rounded-md border border-slate-200 bg-white" 
+                      className="w-10 h-10 object-cover rounded-md border border-[var(--site-border)] bg-[var(--site-surface)]" 
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-slate-800 line-clamp-1">{item.product.name}</p>
-                      <p className="text-[10px] text-slate-500">
+                      <p className="font-semibold text-[var(--site-ink)] line-clamp-1">{item.product.name}</p>
+                      <p className="text-[10px] text-[var(--site-muted)]">
                         {item.quantity}x • {item.selectedSize || 'Standard'}
                       </p>
                     </div>
-                    <span className="font-bold text-slate-900">{symbol}{(convert(item.product.price) * item.quantity).toFixed(currency === 'PKR' ? 0 : 2)}</span>
+                    <span className="font-bold text-[var(--site-ink)]">{symbol}{(convert(item.product.price) * item.quantity).toFixed(currency === 'PKR' ? 0 : 2)}</span>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Price items bottom calculation */}
-            <div className="border-t border-slate-200 pt-3 space-y-2 text-xs font-sans">
-              <div className="flex justify-between text-slate-500">
+            <div className="border-t border-[var(--site-border)] pt-3 space-y-2 text-xs font-sans">
+              <div className="flex justify-between text-[var(--site-muted)]">
                 <span>Subtotal Items</span>
-                <span className="font-semibold text-slate-900">{symbol}{subtotal.toFixed(currency === 'PKR' ? 0 : 2)}</span>
+                <span className="font-semibold text-[var(--site-ink)]">{symbol}{subtotal.toFixed(currency === 'PKR' ? 0 : 2)}</span>
               </div>
               {discountAmount > 0 && (
                 <div className="flex justify-between text-red-650 font-bold">
@@ -551,15 +551,15 @@ export default function CheckoutWizard({ cartItems, appliedCoupon, onClose, onSu
                   <span>-{symbol}{discountAmount.toFixed(currency === 'PKR' ? 0 : 2)}</span>
                 </div>
               )}
-              <div className="flex justify-between text-slate-500">
+              <div className="flex justify-between text-[var(--site-muted)]">
                 <span>Shipping fee</span>
-                <span className="text-slate-900 font-medium font-sans">
+                <span className="text-[var(--site-ink)] font-medium font-sans">
                   {deliveryCharge === 0 ? 'FREE' : `${symbol}${deliveryCharge.toFixed(currency === 'PKR' ? 0 : 2)}`}
                 </span>
               </div>
-              <div className="flex justify-between text-sm font-bold text-slate-900 border-t border-slate-200/50 pt-2.5">
+              <div className="flex justify-between text-sm font-bold text-[var(--site-ink)] border-t border-[var(--site-border)] pt-2.5">
                 <span>Total checkout</span>
-                <span className="text-base text-indigo-700 font-display font-black">{symbol}{finalTotal.toFixed(currency === 'PKR' ? 0 : 2)}</span>
+                <span className="text-base text-[var(--site-gold)] font-display font-black">{symbol}{finalTotal.toFixed(currency === 'PKR' ? 0 : 2)}</span>
               </div>
             </div>
 

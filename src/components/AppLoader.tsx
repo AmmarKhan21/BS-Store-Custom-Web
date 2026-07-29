@@ -42,7 +42,7 @@ export default function AppLoader({
       } ${
         isAdmin
           ? 'bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950'
-          : 'bg-gradient-to-br from-slate-50 via-white to-indigo-50'
+          : 'bg-[var(--site-bg)]'
       }`}
       role="status"
       aria-live="polite"
@@ -51,7 +51,7 @@ export default function AppLoader({
       {/* Ambient glow */}
       <div
         className={`absolute top-1/4 left-1/2 -translate-x-1/2 w-[420px] h-[420px] rounded-full blur-3xl opacity-40 pointer-events-none ${
-          isAdmin ? 'bg-indigo-600' : 'bg-indigo-300'
+          isAdmin ? 'bg-indigo-600' : 'bg-[var(--site-accent)]'
         }`}
         style={{ animation: 'loader-pulse 2.4s ease-in-out infinite' }}
       />
@@ -61,7 +61,7 @@ export default function AppLoader({
         <div className="relative mb-8">
           <div
             className={`absolute inset-0 rounded-2xl blur-md opacity-60 ${
-              isAdmin ? 'bg-indigo-500' : 'bg-indigo-400'
+              isAdmin ? 'bg-indigo-500' : 'bg-[var(--site-gold)]'
             }`}
             style={{ animation: 'loader-pulse 2s ease-in-out infinite' }}
           />
@@ -69,30 +69,36 @@ export default function AppLoader({
             className={`relative w-20 h-20 rounded-2xl flex items-center justify-center shadow-2xl border ${
               isAdmin
                 ? 'bg-indigo-600 border-indigo-400/30 text-white'
-                : 'bg-white border-indigo-100 text-indigo-700'
+                : 'bg-[var(--site-gold)] border-[var(--site-border)] text-[var(--site-bg)]'
             }`}
           >
             <span className="font-display font-black text-3xl tracking-tight">B</span>
           </div>
           <div
-            className="absolute -inset-3 rounded-3xl border-2 border-transparent border-t-indigo-500 border-r-indigo-400/40"
+            className={`absolute -inset-3 rounded-3xl border-2 border-transparent ${
+              isAdmin
+                ? 'border-t-indigo-500 border-r-indigo-400/40'
+                : 'border-t-[var(--site-gold)] border-r-[var(--site-gold)]/40'
+            }`}
             style={{ animation: 'loader-spin 1.1s linear infinite' }}
           />
           <div
-            className="absolute -inset-5 rounded-[1.35rem] border border-indigo-500/20"
+            className={`absolute -inset-5 rounded-[1.35rem] border ${
+              isAdmin ? 'border-indigo-500/20' : 'border-[var(--site-border)]'
+            }`}
             style={{ animation: 'loader-spin 2.2s linear infinite reverse' }}
           />
         </div>
 
         <h2
           className={`font-display font-bold text-lg tracking-tight mb-1 ${
-            isAdmin ? 'text-white' : 'text-slate-900'
+            isAdmin ? 'text-white' : 'text-[var(--site-ink)]'
           }`}
         >
           Bismillah Store
         </h2>
         <p className={`text-[11px] font-semibold uppercase tracking-[0.2em] mb-6 ${
-          isAdmin ? 'text-indigo-300' : 'text-indigo-600'
+          isAdmin ? 'text-indigo-300' : 'text-[var(--site-gold)]'
         }`}>
           Cotton & Sports Hub
         </p>
@@ -100,16 +106,20 @@ export default function AppLoader({
         {/* Progress bar */}
         <div
           className={`w-48 h-1 rounded-full overflow-hidden mb-4 ${
-            isAdmin ? 'bg-slate-700' : 'bg-slate-200'
+            isAdmin ? 'bg-slate-700' : 'bg-[var(--site-surface-2)]'
           }`}
         >
           <div
-            className="h-full rounded-full bg-gradient-to-r from-indigo-500 via-violet-500 to-indigo-400"
+            className={`h-full rounded-full ${
+              isAdmin
+                ? 'bg-gradient-to-r from-indigo-500 via-violet-500 to-indigo-400'
+                : 'bg-[var(--site-progress)]'
+            }`}
             style={{ animation: 'loader-bar 1.4s ease-in-out infinite' }}
           />
         </div>
 
-        <p className={`text-xs font-medium ${isAdmin ? 'text-slate-400' : 'text-slate-500'}`}>
+        <p className={`text-xs font-medium ${isAdmin ? 'text-slate-400' : 'text-[var(--site-muted)]'}`}>
           {statusText}
         </p>
 
@@ -118,7 +128,7 @@ export default function AppLoader({
           {[0, 1, 2].map((i) => (
             <span
               key={i}
-              className={`w-1.5 h-1.5 rounded-full ${isAdmin ? 'bg-indigo-400' : 'bg-indigo-500'}`}
+              className={`w-1.5 h-1.5 rounded-full ${isAdmin ? 'bg-indigo-400' : 'bg-[var(--site-gold)]'}`}
               style={{ animation: `loader-dot 1.2s ease-in-out ${i * 0.15}s infinite` }}
             />
           ))}

@@ -24,19 +24,19 @@ export default function OrderSuccessPage() {
   }, [orderId, params]);
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-200 p-8 text-center">
+    <div className="min-h-screen bg-[var(--site-bg)] flex items-center justify-center p-4">
+      <div className="site-panel w-full max-w-md rounded-2xl p-8 text-center">
         <CheckCircle size={48} className="text-green-500 mx-auto mb-4" />
-        <h1 className="font-display font-bold text-xl text-slate-900 mb-2">Order Confirmed!</h1>
-        {orderId && <p className="text-sm text-slate-600 mb-1">Order ID: <strong>{orderId}</strong></p>}
+        <h1 className="font-display font-bold text-xl text-[var(--site-ink)] mb-2">Order Confirmed!</h1>
+        {orderId && <p className="text-sm text-[var(--site-muted)] mb-1">Order ID: <strong className="text-[var(--site-ink)]">{orderId}</strong></p>}
         {order && (
-          <p className="text-sm text-slate-500 mb-6">
+          <p className="text-sm text-[var(--site-muted)] mb-6">
             Payment: {order.paymentMethod} · {order.paymentStatus}
             <br />A confirmation email has been sent to {order.customerEmail}
           </p>
         )}
-        <Link to="/" className="inline-block px-6 py-3 bg-indigo-600 text-white font-bold text-sm rounded-xl">Continue Shopping</Link>
-        <Link to="/account" className="block mt-3 text-xs text-indigo-600 font-bold">View order history</Link>
+        <Link to="/" className="site-btn-primary inline-block px-6 py-3 font-bold text-sm rounded-xl">Continue Shopping</Link>
+        <Link to="/account" className="block mt-3 text-xs text-[var(--site-gold)] font-bold">View order history</Link>
       </div>
     </div>
   );

@@ -12,12 +12,12 @@ import ProductModal from './components/ProductModal';
 import CartDrawer from './components/CartDrawer';
 import CheckoutWizard from './components/CheckoutWizard';
 import AppLoader from './components/AppLoader';
-import SiteThemeSwitcher from './components/SiteThemeSwitcher';
 import { Sparkles } from 'lucide-react';
-import { loadSiteTheme, saveSiteTheme, SiteThemeId } from './theme/siteThemes';
+import { useSiteTheme } from './context/SiteThemeContext';
 
 export default function StoreApp() {
   const { currency, format, country, loading: currencyLoading } = useCurrency();
+  const { setChromeHidden } = useSiteTheme();
   usePageMeta({
     title: 'Shop',
     description: 'Bismillah Cotton & Sports Hub — premium cotton fabrics, clothing & sports wear. COD, PayFast & JazzCash.',
@@ -99,22 +99,17 @@ export default function StoreApp() {
   const [showFeaturedOnly, setShowFeaturedOnly] = useState<boolean>(false);
   const [minRating, setMinRating] = useState<number>(0);
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState<boolean>(false);
-  const [siteTheme, setSiteTheme] = useState<SiteThemeId>(() => loadSiteTheme());
-  const [themeFlash, setThemeFlash] = useState(false);
-
-  const handleSiteThemeChange = (id: SiteThemeId) => {
-    setSiteTheme(id);
-    saveSiteTheme(id);
-    setThemeFlash(true);
-    window.setTimeout(() => setThemeFlash(false), 700);
-  };
-
 
   // Interactive Overlays
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
+
+  useEffect(() => {
+    setChromeHidden(Boolean(selectedProduct) || isCartOpen || isCheckoutOpen);
+    return () => setChromeHidden(false);
+  }, [selectedProduct, isCartOpen, isCheckoutOpen, setChromeHidden]);
 
   // --- USER TRIGGERS / HANDLERS ---
   const handleOpenQuickView = (product: Product) => {
@@ -330,12 +325,7 @@ export default function StoreApp() {
         variant="store"
         message="Loading products & prices…"
       />
-    <div
-      data-site-theme={siteTheme}
-      className="flex min-h-screen flex-col justify-between bg-[var(--site-bg)] font-sans text-[var(--site-ink)] selection:bg-[var(--site-gold)]/35"
-    >
-      {themeFlash && <div className="site-theme-flash" aria-hidden />}
-
+    <div className="flex min-h-screen flex-col justify-between">
       {/* Toast Alert Notification */}
       {toastMessage && (
         <div className="fixed right-6 bottom-6 z-[100] flex animate-bounce items-center gap-2.5 rounded-xl border border-[var(--site-border)] bg-[var(--site-surface)] px-4 py-3 text-xs font-semibold text-[var(--site-ink)] shadow-2xl">
@@ -343,12 +333,6 @@ export default function StoreApp() {
           <span>{toastMessage}</span>
         </div>
       )}
-
-      <SiteThemeSwitcher
-        active={siteTheme}
-        onChange={handleSiteThemeChange}
-        hidden={Boolean(selectedProduct) || isCartOpen || isCheckoutOpen}
-      />
 
       <StoreNavbar
         customerName={customerName}

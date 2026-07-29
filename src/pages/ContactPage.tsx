@@ -11,57 +11,57 @@ export default function ContactPage() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-      <header className="bg-white border-b border-slate-200 px-4 md:px-8 py-4">
-        <Link to="/" className="font-display font-bold text-slate-900">← Bismillah Store</Link>
+    <div className="min-h-screen bg-[var(--site-bg)] flex flex-col">
+      <header className="bg-[var(--site-surface)] border-b border-[var(--site-border)] px-4 md:px-8 py-4">
+        <Link to="/" className="font-display font-bold text-[var(--site-ink)]">← Bismillah Store</Link>
       </header>
       <main className="flex-1 max-w-3xl mx-auto px-4 py-10">
-        <h1 className="text-2xl font-bold text-slate-900 mb-2">Contact Us</h1>
-        <p className="text-sm text-slate-600 mb-8">We're here to help with orders, product questions, and returns.</p>
+        <h1 className="text-2xl font-bold text-[var(--site-ink)] mb-2">Contact Us</h1>
+        <p className="text-sm text-[var(--site-muted)] mb-8">We're here to help with orders, product questions, and returns.</p>
 
         <div className="grid gap-4">
           <a
             href="https://wa.me/923001234567?text=Hi%2C%20I%20have%20a%20question%20about%20Bismillah%20Store"
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-4 p-5 bg-white border border-slate-200 rounded-xl hover:border-green-400 transition-colors"
+            className="site-panel flex items-center gap-4 p-5 rounded-xl hover:border-[var(--site-gold)] transition-colors"
           >
             <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center text-green-600">
               <MessageCircle size={24} />
             </div>
             <div>
-              <p className="font-bold text-slate-900">WhatsApp</p>
-              <p className="text-sm text-slate-500">Chat with us — fastest response</p>
+              <p className="font-bold text-[var(--site-ink)]">WhatsApp</p>
+              <p className="text-sm text-[var(--site-muted)]">Chat with us — fastest response</p>
             </div>
           </a>
 
-          <div className="flex items-center gap-4 p-5 bg-white border border-slate-200 rounded-xl">
-            <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600">
+          <div className="site-panel flex items-center gap-4 p-5 rounded-xl">
+            <div className="w-12 h-12 bg-[var(--site-surface-2)] rounded-xl flex items-center justify-center text-[var(--site-accent)]">
               <Mail size={24} />
             </div>
             <div>
-              <p className="font-bold text-slate-900">Email</p>
-              <p className="text-sm text-slate-500">support@bismillahstore.pk</p>
+              <p className="font-bold text-[var(--site-ink)]">Email</p>
+              <p className="text-sm text-[var(--site-muted)]">support@bismillahstore.pk</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4 p-5 bg-white border border-slate-200 rounded-xl">
-            <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600">
+          <div className="site-panel flex items-center gap-4 p-5 rounded-xl">
+            <div className="w-12 h-12 bg-[var(--site-surface-2)] rounded-xl flex items-center justify-center text-[var(--site-muted)]">
               <MapPin size={24} />
             </div>
             <div>
-              <p className="font-bold text-slate-900">Warehouse</p>
-              <p className="text-sm text-slate-500">Lahore Karkhana Market, Pakistan</p>
+              <p className="font-bold text-[var(--site-ink)]">Warehouse</p>
+              <p className="text-sm text-[var(--site-muted)]">Lahore Karkhana Market, Pakistan</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4 p-5 bg-white border border-slate-200 rounded-xl">
-            <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600">
+          <div className="site-panel flex items-center gap-4 p-5 rounded-xl">
+            <div className="w-12 h-12 bg-[var(--site-surface-2)] rounded-xl flex items-center justify-center text-[var(--site-muted)]">
               <Phone size={24} />
             </div>
             <div>
-              <p className="font-bold text-slate-900">Hours</p>
-              <p className="text-sm text-slate-500">Mon–Sat, 10am – 7pm PKT</p>
+              <p className="font-bold text-[var(--site-ink)]">Hours</p>
+              <p className="text-sm text-[var(--site-muted)]">Mon–Sat, 10am – 7pm PKT</p>
             </div>
           </div>
         </div>

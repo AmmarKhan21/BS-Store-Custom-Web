@@ -126,7 +126,7 @@ export default function StoreNavbar({
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder="Search cotton, sports, trophies…"
-              className="w-full rounded-full border border-[var(--site-border)] bg-white/[0.06] py-2.5 pr-4 pl-10 text-xs text-[var(--site-ink)] placeholder-[var(--site-muted)] outline-none transition focus:border-[var(--site-gold)]/50 focus:ring-1 focus:ring-[var(--site-gold)]/35"
+              className="w-full rounded-full border border-[var(--site-border)] bg-[var(--site-field-bg)] py-2.5 pr-4 pl-10 text-xs text-[var(--site-ink)] placeholder-[var(--site-placeholder)] outline-none transition focus:border-[var(--site-gold)]/50 focus:ring-1 focus:ring-[var(--site-gold)]/35"
             />
           </form>
 
@@ -134,7 +134,7 @@ export default function StoreNavbar({
             <button
               type="button"
               onClick={() => setMobileSearchOpen((v) => !v)}
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/25 bg-white/10 text-[var(--site-ink)] transition hover:border-[var(--site-gold)]/50 hover:text-[var(--site-gold-soft)] md:hidden"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--site-border)] bg-[color-mix(in_srgb,var(--site-ink)_6%,transparent)] text-[var(--site-ink)] transition hover:border-[var(--site-gold)]/50 hover:text-[var(--site-gold-soft)] md:hidden"
               aria-label="Search"
             >
               <Search size={16} />
@@ -160,7 +160,7 @@ export default function StoreNavbar({
             <button
               type="button"
               onClick={onOpenCart}
-              className="relative flex h-10 w-10 items-center justify-center rounded-full border border-white/25 bg-white/10 text-[var(--site-ink)] transition hover:border-[var(--site-gold)]/50"
+              className="relative flex h-10 w-10 items-center justify-center rounded-full border border-[var(--site-border)] bg-[color-mix(in_srgb,var(--site-ink)_6%,transparent)] text-[var(--site-ink)] transition hover:border-[var(--site-gold)]/50"
               aria-label={`Shopping cart, ${cartCount} items`}
             >
               <ShoppingBag size={16} />
@@ -174,7 +174,7 @@ export default function StoreNavbar({
             <button
               type="button"
               onClick={() => setMobileOpen((v) => !v)}
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/25 bg-white/10 text-[var(--site-ink)] transition hover:border-[var(--site-gold)]/40 lg:hidden"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--site-border)] bg-[color-mix(in_srgb,var(--site-ink)_6%,transparent)] text-[var(--site-ink)] transition hover:border-[var(--site-gold)]/40 lg:hidden"
               aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={mobileOpen}
             >
@@ -193,7 +193,7 @@ export default function StoreNavbar({
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
                 placeholder="Search the collection…"
-                className="w-full rounded-full border border-[var(--site-border)] bg-white/[0.06] py-2.5 pr-4 pl-10 text-sm text-[var(--site-ink)] outline-none focus:border-[var(--site-gold)]/50"
+                className="w-full rounded-full border border-[var(--site-border)] bg-[var(--site-field-bg)] py-2.5 pr-4 pl-10 text-sm text-[var(--site-ink)] placeholder-[var(--site-placeholder)] outline-none focus:border-[var(--site-gold)]/50"
               />
             </div>
           </form>

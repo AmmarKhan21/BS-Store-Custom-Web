@@ -265,7 +265,7 @@
       "currency": "PKR",
       "paymentMethod": "COD",
       "paymentStatus": "Pending",
-      "status": "Pending",
+      "status": "Shipped",
       "date": "2026-07-29T11:09:36.526Z",
       "notes": null,
       "paymentRef": null,
