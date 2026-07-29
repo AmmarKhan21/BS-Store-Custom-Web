@@ -4,17 +4,10 @@
 @theme {
   --font-sans: "Outfit", system-ui, -apple-system, sans-serif;
   --font-display: "Cormorant Garamond", Georgia, serif;
-  
-  --color-primary-50: #f4efe6;
-  --color-primary-100: #e8e4dc;
-  --color-primary-200: #d4cfc4;
-  --color-primary-600: #1f6b55;
-  --color-primary-700: #145a4a;
-  --color-primary-800: #0e3d34;
-  --color-primary-900: #061614;
-  
-  --color-accent-gold: #c9a66b;
-  --color-accent-gold-light: #e2c08a;
+  --color-ink: #050d0b;
+  --color-gold: #c9a66b;
+  --color-gold-light: #e2c08a;
+  --color-teal: #1f6b55;
 }
 
 html {
@@ -43,15 +36,119 @@ h1, h2, h3, h4, h5, h6, .font-display {
   background: #c9a66b;
   border-radius: 4px;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: #e2c08a;
+
+/* ── Motion graphic keyframes ── */
+@keyframes mg-float {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(12px, -28px, 0) scale(1.08); }
 }
 
-@keyframes float-soft {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
+@keyframes mg-float-alt {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(-18px, 20px, 0) scale(0.94); }
 }
 
-.animate-float-soft {
-  animation: float-soft 5s ease-in-out infinite;
+@keyframes mg-spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes mg-pulse-ring {
+  0% { transform: scale(0.85); opacity: 0.55; }
+  70% { transform: scale(1.25); opacity: 0; }
+  100% { transform: scale(1.25); opacity: 0; }
+}
+
+@keyframes mg-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@keyframes mg-dash {
+  to { stroke-dashoffset: -240; }
+}
+
+@keyframes mg-shimmer {
+  0% { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+@keyframes mg-rise {
+  from { opacity: 0; transform: translateY(40px); filter: blur(6px); }
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+
+.mg-orb {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(48px);
+  pointer-events: none;
+  will-change: transform;
+}
+
+.mg-orb-a {
+  animation: mg-float 9s ease-in-out infinite;
+}
+
+.mg-orb-b {
+  animation: mg-float-alt 11s ease-in-out infinite;
+}
+
+.mg-ring {
+  position: absolute;
+  border: 1px solid rgba(201, 166, 107, 0.35);
+  border-radius: 9999px;
+  pointer-events: none;
+  animation: mg-pulse-ring 3.6s ease-out infinite;
+}
+
+.mg-marquee-track {
+  display: flex;
+  width: max-content;
+  animation: mg-marquee 28s linear infinite;
+}
+
+.mg-marquee-track:hover {
+  animation-play-state: paused;
+}
+
+.mg-thread {
+  stroke-dasharray: 12 18;
+  animation: mg-dash 8s linear infinite;
+}
+
+.mg-shimmer-text {
+  background: linear-gradient(
+    110deg,
+    #f4efe6 0%,
+    #f4efe6 35%,
+    #e2c08a 50%,
+    #f4efe6 65%,
+    #f4efe6 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: mg-shimmer 5s linear infinite;
+}
+
+.mg-grain {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  opacity: 0.14;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mg-orb-a,
+  .mg-orb-b,
+  .mg-ring,
+  .mg-marquee-track,
+  .mg-thread,
+  .mg-shimmer-text {
+    animation: none !important;
+  }
 }

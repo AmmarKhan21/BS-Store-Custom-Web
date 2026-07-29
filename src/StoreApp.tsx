@@ -413,10 +413,8 @@ export default function StoreApp() {
       />
 
       {/* CUSTOMER STOREFRONT LAYOUT */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 md:px-8 py-10 space-y-8 bg-[#f4efe6] text-[#0e1f1c] rounded-t-[2rem] md:rounded-t-[3rem] relative z-10 -mt-6">
-
-          {/* Grid control desk section */}
-          <div className="pt-2" id="store-grid-section">
+      <main className="flex-1 w-full bg-[#0a1613] relative z-10" id="store-grid-section">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-12 space-y-8 rounded-t-[2rem] md:rounded-t-[3rem] bg-[#f4efe6] text-[#0e1f1c] shadow-[0_-30px_80px_rgba(0,0,0,0.35)]">
             
             {/* Section Header */}
             <div className="w-full text-center md:text-left mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4 pt-4">
@@ -811,7 +809,6 @@ export default function StoreApp() {
                 )}
               </div>
             </div>
-          </div>
 
           {/* MOBILE SLIDE-OVER BOTTOM SHEET FILTERS */}
           {isMobileFiltersOpen && (
@@ -974,6 +971,7 @@ export default function StoreApp() {
             </div>
           )}
 
+        </div>
         </main>
 
       {/* FOOTER SECTION */}
