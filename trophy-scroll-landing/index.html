@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Premium Trophy Reveal</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="top-nav" id="topNav">
+      <div class="brand">Bismillah Cotton & Sports Hub</div>
+      <nav class="nav-links" aria-label="Top">
+        <a href="#products" class="nav-link">Store</a>
+        <a href="#products" class="nav-link">Contact</a>
+      </nav>
+    </header>
+
+    <main>
+      <section id="scroll-area" aria-label="Scroll reveal">
+        <div id="sticky">
+          <canvas id="reel" aria-label="3D product reel canvas"></canvas>
+
+          <div id="hud" aria-live="polite">
+            <div class="hud-pill" id="loadingPill">Loading frames…</div>
+            <div class="hud-title" id="productTitle">Premium Gold Metallic Football Trophy</div>
+            <div class="hud-subtitle" id="productSubtitle">Scroll to reveal every facet</div>
+            <div class="hud-progress" aria-hidden>
+              <span id="progressText">0%</span>
+              <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="products" class="products">
+        <div class="products-inner">
+          <h2 class="products-title">Shop the collection</h2>
+          <p class="products-subtitle">Pick a product below. The scroll reel stays on this trophy reveal.</p>
+          <div class="product-grid" id="productGrid"></div>
+          <div class="products-note" id="productsNote"></div>
+        </div>
+      </section>
+    </main>
+
+    <script src="./script.js"></script>
+  </body>
+</html>
+
