@@ -127,11 +127,16 @@ export default function StoreApp() {
 
   // Cart operations
   const handleAddToCartDirectly = (product: Product) => {
+    if (product.stock <= 0) {
+      triggerToast('Hurry, this product is sold out!');
+      return;
+    }
     const quantityToAdd = 1;
     const defaultSize = product.sizes?.[0] || 'Standard';
     const defaultColor = product.colors?.[0] || '';
 
     handleAddToCart(product, quantityToAdd, defaultSize, defaultColor);
+    setIsCartOpen(true);
   };
 
   const handleAddToCart = (product: Product, quantity: number, size?: string, color?: string) => {

@@ -290,7 +290,7 @@ export default function CartDrawer({
 
                 <div className="flex justify-between text-base font-bold text-[var(--site-ink)] pt-2 border-t border-[var(--site-border)]">
                   <span>Estimated Total</span>
-                  <span className="text-lg text-[var(--site-gold)] font-display font-black">
+                  <span className="text-lg font-sans font-bold tabular-nums text-[var(--site-ink)]">
                     ${(finalTotal + (subtotal >= 100 || subtotal === 0 ? 0 : 5)).toFixed(2)}
                   </span>
                 </div>

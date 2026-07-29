@@ -559,7 +559,7 @@ export default function CheckoutWizard({ cartItems, appliedCoupon, onClose, onSu
               </div>
               <div className="flex justify-between text-sm font-bold text-[var(--site-ink)] border-t border-[var(--site-border)] pt-2.5">
                 <span>Total checkout</span>
-                <span className="text-base text-[var(--site-gold)] font-display font-black">{symbol}{finalTotal.toFixed(currency === 'PKR' ? 0 : 2)}</span>
+                <span className="text-base font-bold font-sans text-[var(--site-ink)] tabular-nums">{symbol}{finalTotal.toFixed(currency === 'PKR' ? 0 : 2)}</span>
               </div>
             </div>
 
