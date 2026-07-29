@@ -5,8 +5,8 @@ export const DARAZ_TROPHY = {
   tagline: 'Ballon d’Or style · World Cup · UCL · Golden Boot collection',
   description:
     'Top premium gold metallic football trophy (17.5cm). Mirror-finish gold with polished ball, textured stem, and tiered pedestal. Ideal for awards, gifting, and collector displays. Listed on Daraz from Ak-Bismillah Store.',
-  price: 6699,
-  originalPrice: 16000,
+  price: 24,
+  originalPrice: 57,
   category: 'Trophy',
   darazUrl:
     'https://www.daraz.pk/products/top-and-best-premium-gold-metallic-trophy-175cm-size-football-trophy-football-trophy-ballon-dor-football-trophy-world-cup-football-trophy-ucl-football-trophy-keychain-football-trophys-football-trophy-big-football-trophy-golden-boot-football-trophy-cup-i887783165-s3919065252.html',
