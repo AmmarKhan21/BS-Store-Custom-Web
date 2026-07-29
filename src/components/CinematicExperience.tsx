@@ -9,6 +9,7 @@ import {
 import { Product } from '../types';
 import { useCurrency } from '../context/CurrencyContext';
 import GalleryErrorBoundary from './GalleryErrorBoundary';
+import TrophyArchiveScene from './TrophyArchiveScene';
 
 const ProductGallery3D = lazy(() => import('./ProductGallery3D'));
 
@@ -22,6 +23,7 @@ const CHAPTERS = [
   { id: 'overture', label: 'Overture', roman: '◆' },
   { id: 'weave', label: 'The Weave', roman: 'I' },
   { id: 'arena', label: 'The Arena', roman: 'II' },
+  { id: 'archive', label: 'Trophy', roman: '★' },
   { id: 'collection', label: 'Collection', roman: 'III' },
   { id: 'shop', label: 'The Shop', roman: 'IV' },
 ];
@@ -212,7 +214,12 @@ function ScrollBeatCard({
   beat: { n: string; title: string; line: string };
   fromX: number;
 }) {
-  const opacity = useTransform(progress, [start, end, Math.min(end + 0.25, 1)], [0, 1, 1]);
+  const fadeEnd = end >= 0.998 ? 1 : Math.min(end + 0.2, 0.999);
+  const opacity = useTransform(
+    progress,
+    fadeEnd > end ? [start, end, fadeEnd] : [start, Math.max(start, end - 0.001), end],
+    [0, 1, 1]
+  );
   const x = useTransform(progress, [start, end], [fromX, 0]);
   const blur = useTransform(progress, [start, end], [8, 0]);
   const filter = useTransform(blur, (b) => `blur(${b}px)`);
@@ -541,7 +548,14 @@ export default function CinematicExperience({
   const progressWidth = useTransform(smooth, [0, 1], ['0%', '100%']);
 
   useEffect(() => {
-    const ids = ['chapter-overture', 'chapter-weave', 'chapter-arena', 'chapter-collection', 'chapter-shop'];
+    const ids = [
+      'chapter-overture',
+      'chapter-weave',
+      'chapter-arena',
+      'chapter-archive',
+      'chapter-collection',
+      'chapter-shop',
+    ];
     const nodes = ids.map((id) => document.getElementById(id)).filter(Boolean) as HTMLElement[];
     const observer = new IntersectionObserver(
       (entries) => {
@@ -582,6 +596,12 @@ export default function CinematicExperience({
 
       <ScrollScene id="chapter-arena" height="300vh">
         {(p) => <ArenaScene progress={p} onCta={() => goShop('Sports Wear')} />}
+      </ScrollScene>
+
+      <ScrollScene id="chapter-archive" height="360vh">
+        {(p) => (
+          <TrophyArchiveScene progress={p} products={products} onOpen={onOpenProduct} />
+        )}
       </ScrollScene>
 
       <ScrollScene id="chapter-collection" height="280vh">

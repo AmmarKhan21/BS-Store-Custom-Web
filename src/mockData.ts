@@ -244,4 +244,4 @@ export const INITIAL_ORDERS: Order[] = [
   }
 ];
 
-export const CATEGORIES = ['Cotton Collection', 'Clothing', 'Sports Wear', 'Sports Gear'];
+export const CATEGORIES = ['Cotton Collection', 'Clothing', 'Sports Wear', 'Sports Gear', 'Trophy'];

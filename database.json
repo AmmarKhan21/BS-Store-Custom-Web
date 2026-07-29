@@ -91,19 +91,19 @@
       "dateAdded": "2026-06-24"
     },
     {
-      "id": "prod-1782281989491",
-      "name": "New test trophy",
-      "description": "Premium classic fabric clothing style suited for best elegance & luxurious casual standards.",
-      "price": 39,
-      "originalPrice": 12,
+      "id": "prod-daraz-trophy-887783165",
+      "name": "Premium Gold Metallic Football Trophy — 17.5cm",
+      "description": "Top premium gold metallic football trophy (17.5cm). Mirror-finish gold with polished ball, textured stem, and tiered pedestal. Ideal for awards, gifting, and collector displays. From Ak-Bismillah Store on Daraz — Ballon d'Or style, World Cup, UCL & Golden Boot collection.",
+      "price": 6699,
+      "originalPrice": 16000,
       "category": "Trophy",
-      "images": "[\"https://www.trophee-sportif.com/9853-thickbox_default/coupe-or.jpg\"]",
-      "sizes": "[\"S\",\"M\",\"L\",\"XL\"]",
-      "colors": "[\"#FFFFFF\",\"#000000\",\"#eedbc5\"]",
+      "images": "[\"/trophies/01.jpg\",\"/trophies/02.jpg\",\"/trophies/03.jpg\",\"/trophies/04.jpg\",\"/trophies/05.jpg\",\"/trophies/06.jpg\",\"/trophies/07.jpg\",\"/trophies/08.jpg\"]",
+      "sizes": "[\"17.5cm\"]",
+      "colors": "[\"#C9A66B\",\"#E2C08A\"]",
       "rating": 5,
-      "stock": 0,
+      "stock": 25,
       "isFeatured": 1,
-      "dateAdded": "2026-06-24"
+      "dateAdded": "2026-07-12"
     }
   ],
   "reviews": [
