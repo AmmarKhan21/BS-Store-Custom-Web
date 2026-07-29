@@ -19,7 +19,7 @@ export default function CinematicExperience({
   };
 
   return (
-    <div className="relative bg-[#050d0b] text-[#f4efe6]">
+    <div className="relative bg-[var(--site-bg)] text-[var(--site-ink)]">
       <ScrollFrameHero
         products={products}
         onOpenProduct={onOpenProduct}

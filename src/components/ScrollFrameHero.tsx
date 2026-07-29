@@ -8,14 +8,13 @@ import {
 } from 'motion/react';
 import { Product } from '../types';
 import { useCurrency } from '../context/CurrencyContext';
+import { readSiteBg } from '../theme/siteThemes';
 
 const FRAME_COUNT = 270;
 const FRAME_PAD = 4;
 const FRAMES_BASE = '/frames';
 const EASING = 0.12;
 const SCROLL_HEIGHT = '620vh';
-/** Unified stage — never paint the frame’s grey plate as page bg */
-const THEME_BG = '#050d0b';
 
 function clamp01(v: number) {
   return Math.min(1, Math.max(0, v));
@@ -110,7 +109,7 @@ function GoldRule({
   );
   return (
     <motion.div
-      className="mb-6 h-px origin-left bg-gradient-to-r from-[#c9a66b] via-[#e2c08a] to-transparent"
+      className="mb-6 h-px origin-left bg-gradient-to-r from-[var(--site-gold)] via-[var(--site-gold-soft)] to-transparent"
       style={{ width }}
     />
   );
@@ -173,9 +172,10 @@ export default function ScrollFrameHero({ products, onOpenProduct, onGoShop }: P
     if (!img) return;
 
     const { w: canvasW, h: canvasH, dpr } = canvasSizeRef.current;
+    const siteBg = readSiteBg(scrollRef.current) || readSiteBg() || '#050d0b';
 
-    // Always clear with theme emerald — never the frame grey plate
-    ctx.fillStyle = THEME_BG;
+    // Always clear with live site theme bg
+    ctx.fillStyle = siteBg;
     ctx.fillRect(0, 0, canvasW, canvasH);
 
     const iw = img.naturalWidth || img.width;
@@ -193,21 +193,21 @@ export default function ScrollFrameHero({ products, onOpenProduct, onGoShop }: P
     ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(img, 0, 0, iw, ih, dx, dy, dw, dh);
 
-    // Dissolve the rectangular plate edges into THEME_BG
+    // Dissolve plate edges into site bg
     const featherX = dw * 0.22;
     const featherY = dh * 0.18;
 
     // Left / right plate fade
     {
       const g = ctx.createLinearGradient(dx, 0, dx + featherX, 0);
-      g.addColorStop(0, THEME_BG);
+      g.addColorStop(0, siteBg);
       g.addColorStop(1, 'rgba(5,13,11,0)');
       ctx.fillStyle = g;
       ctx.fillRect(dx - 1, dy - 1, featherX + 2, dh + 2);
     }
     {
       const g = ctx.createLinearGradient(dx + dw, 0, dx + dw - featherX, 0);
-      g.addColorStop(0, THEME_BG);
+      g.addColorStop(0, siteBg);
       g.addColorStop(1, 'rgba(5,13,11,0)');
       ctx.fillStyle = g;
       ctx.fillRect(dx + dw - featherX - 1, dy - 1, featherX + 2, dh + 2);
@@ -215,14 +215,14 @@ export default function ScrollFrameHero({ products, onOpenProduct, onGoShop }: P
     // Top / bottom plate fade
     {
       const g = ctx.createLinearGradient(0, dy, 0, dy + featherY);
-      g.addColorStop(0, THEME_BG);
+      g.addColorStop(0, siteBg);
       g.addColorStop(1, 'rgba(5,13,11,0)');
       ctx.fillStyle = g;
       ctx.fillRect(dx - 1, dy - 1, dw + 2, featherY + 2);
     }
     {
       const g = ctx.createLinearGradient(0, dy + dh, 0, dy + dh - featherY);
-      g.addColorStop(0, THEME_BG);
+      g.addColorStop(0, siteBg);
       g.addColorStop(1, 'rgba(5,13,11,0)');
       ctx.fillStyle = g;
       ctx.fillRect(dx - 1, dy + dh - featherY - 1, dw + 2, featherY + 2);
@@ -242,7 +242,7 @@ export default function ScrollFrameHero({ products, onOpenProduct, onGoShop }: P
     radial.addColorStop(0, 'rgba(5,13,11,0)');
     radial.addColorStop(0.55, 'rgba(5,13,11,0)');
     radial.addColorStop(0.82, 'rgba(5,13,11,0.55)');
-    radial.addColorStop(1, THEME_BG);
+    radial.addColorStop(1, siteBg);
     ctx.fillStyle = radial;
     ctx.fillRect(0, 0, canvasW, canvasH);
   }, []);
@@ -309,6 +309,16 @@ export default function ScrollFrameHero({ products, onOpenProduct, onGoShop }: P
   }, [drawFrame, resizeCanvas]);
 
   useEffect(() => {
+    const root = document.querySelector('[data-site-theme]');
+    if (!root) return;
+    const obs = new MutationObserver(() => {
+      if (readyRef.current) drawFrame(Math.round(currentFrameRef.current));
+    });
+    obs.observe(root, { attributes: true, attributeFilter: ['data-site-theme'] });
+    return () => obs.disconnect();
+  }, [drawFrame]);
+
+  useEffect(() => {
     const unsub = scrollYProgress.on('change', (p) => {
       const v = clamp01(p);
       targetProgressRef.current = v;
@@ -327,18 +337,18 @@ export default function ScrollFrameHero({ products, onOpenProduct, onGoShop }: P
     <div
       ref={scrollRef}
       id="cinematic-story"
-      className="relative bg-[#050d0b]"
+      className="relative bg-[var(--site-bg)]"
       style={{ height: SCROLL_HEIGHT }}
     >
       <motion.div
-        className="fixed left-0 top-0 z-50 h-[2px] origin-left bg-gradient-to-r from-[#1f6b55] via-[#c9a66b] to-[#e2c08a]"
+        className="site-progress-bar fixed left-0 top-0 z-50 h-[2px] origin-left"
         style={{ width: progressWidth }}
       />
 
-      <div className="sticky top-0 h-[100svh] w-full overflow-hidden bg-[#050d0b]">
+      <div className="sticky top-0 h-[100svh] w-full overflow-hidden bg-[var(--site-bg)]">
         {/* Shared atmosphere across both columns */}
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_80%_at_20%_50%,rgba(31,107,85,0.2),transparent_60%)]" />
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_55%_65%_at_78%_48%,rgba(201,166,107,0.1),transparent_58%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_80%_at_20%_50%,var(--site-hero-glow-a),transparent_60%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_55%_65%_at_78%_48%,var(--site-hero-glow-b),transparent_58%)]" />
         <div
           className="pointer-events-none absolute inset-0 opacity-[0.045] mix-blend-overlay"
           style={{
@@ -349,13 +359,13 @@ export default function ScrollFrameHero({ products, onOpenProduct, onGoShop }: P
 
         <div className="relative z-10 mx-auto flex h-full w-full max-w-[1600px] flex-col lg:flex-row">
           {/* ── LEFT: animated copy ── */}
-          <aside className="relative z-20 flex h-[42%] w-full flex-col justify-center px-6 pb-2 pt-24 sm:px-10 lg:h-full lg:w-[44%] lg:justify-center lg:px-12 lg:pb-8 lg:pt-28 xl:px-16">
-            <div className="mb-5 flex items-center gap-3 lg:mb-8">
+          <aside className="relative z-20 flex h-[44%] w-full flex-col justify-center px-5 pb-2 pt-20 sm:px-10 lg:h-full lg:w-[44%] lg:justify-center lg:px-12 lg:pb-8 lg:pt-28 xl:px-16">
+            <div className="mb-4 flex items-center gap-2.5 sm:gap-3 lg:mb-8">
               {chapters.map((roman, i) => (
-                <div key={roman} className="flex items-center gap-3">
+                <div key={roman} className="flex items-center gap-2.5 sm:gap-3">
                   <motion.span
                     animate={{
-                      color: activeChapter === i ? '#c9a66b' : 'rgba(244,239,230,0.28)',
+                      color: activeChapter === i ? 'var(--site-gold)' : 'color-mix(in srgb, var(--site-ink) 55%, transparent)',
                       scale: activeChapter === i ? 1.08 : 1,
                     }}
                     transition={{ duration: 0.35 }}
@@ -364,11 +374,11 @@ export default function ScrollFrameHero({ products, onOpenProduct, onGoShop }: P
                     {roman}
                   </motion.span>
                   {i < chapters.length - 1 && (
-                    <span className="h-px w-4 bg-[#f4efe6]/15" />
+                    <span className="h-px w-3 bg-[var(--site-ink)]/30 sm:w-4" />
                   )}
                 </div>
               ))}
-              <span className="ml-auto font-mono text-[10px] tracking-[0.2em] text-[#c9a66b]/60">
+              <span className="ml-auto font-mono text-[10px] font-semibold tracking-[0.2em] text-[var(--site-gold)]">
                 {progressPct}%
               </span>
             </div>
@@ -376,20 +386,20 @@ export default function ScrollFrameHero({ products, onOpenProduct, onGoShop }: P
             <div className="relative h-[min(38vh,280px)] w-full lg:h-[min(58vh,460px)]">
               <ChapterPanel progress={smoothProgress} enter={0} hold={0.18} exit={0.28}>
                 <GoldRule progress={smoothProgress} enter={0.02} exit={0.28} />
-                <p className="mb-3 text-[10px] font-bold tracking-[0.35em] text-[#c9a66b] uppercase">
+                <p className="mb-3 text-[10px] font-bold tracking-[0.35em] text-[var(--site-gold)] uppercase">
                   Bismillah Cotton & Sports
                 </p>
-                <h1 className="font-display text-[2.35rem] font-semibold leading-[1.05] tracking-tight text-[#f4efe6] sm:text-5xl xl:text-6xl">
+                <h1 className="font-display text-[2.1rem] font-semibold leading-[1.05] tracking-tight text-[var(--site-ink)] sm:text-5xl xl:text-6xl">
                   Crafted for
-                  <span className="mt-1 block bg-gradient-to-r from-[#c9a66b] via-[#e2c08a] to-[#c9a66b] bg-clip-text text-transparent">
+                  <span className="mt-1 block bg-gradient-to-r from-[var(--site-gold)] via-[var(--site-gold-soft)] to-[var(--site-gold)] bg-clip-text text-transparent">
                     Glory
                   </span>
                 </h1>
-                <p className="mt-5 max-w-sm text-sm leading-relaxed text-[#f4efe6]/55">
+                <p className="mt-4 max-w-sm text-[13px] leading-relaxed text-[var(--site-ink)]/80 sm:mt-5 sm:text-sm">
                   Scroll to spin the reel — every frame, a closer look at championship gold.
                 </p>
                 <motion.p
-                  className="mt-8 text-[10px] tracking-[0.3em] text-[#c9a66b]/70 uppercase lg:hidden"
+                  className="mt-6 text-[10px] font-semibold tracking-[0.3em] text-[var(--site-gold)] uppercase lg:hidden"
                   animate={{ opacity: [0.4, 1, 0.4], y: [0, 4, 0] }}
                   transition={{ duration: 2, repeat: Infinity }}
                 >
@@ -399,19 +409,19 @@ export default function ScrollFrameHero({ products, onOpenProduct, onGoShop }: P
 
               <ChapterPanel progress={smoothProgress} enter={0.24} hold={0.42} exit={0.56}>
                 <GoldRule progress={smoothProgress} enter={0.26} exit={0.56} />
-                <p className="mb-3 text-[10px] tracking-[0.32em] text-[#1f6b55] uppercase">
+                <p className="mb-3 text-[10px] tracking-[0.32em] text-[var(--site-accent)] uppercase">
                   The motion
                 </p>
-                <h2 className="font-display text-[2.1rem] font-medium leading-[1.1] text-[#f4efe6] sm:text-4xl xl:text-5xl">
+                <h2 className="font-display text-[2.1rem] font-medium leading-[1.1] text-[var(--site-ink)] sm:text-4xl xl:text-5xl">
                   Spin.
                   <br />
                   Shine.
                   <br />
-                  <span className="bg-gradient-to-r from-[#c9a66b] to-[#e2c08a] bg-clip-text text-transparent">
+                  <span className="bg-gradient-to-r from-[var(--site-gold)] to-[var(--site-gold-soft)] bg-clip-text text-transparent">
                     Celebrate.
                   </span>
                 </h2>
-                <p className="mt-5 max-w-sm text-sm leading-relaxed text-[#f4efe6]/55">
+                <p className="mt-4 max-w-sm text-[13px] leading-relaxed text-[var(--site-ink)]/80 sm:mt-5 sm:text-sm">
                   Premium metallic trophies — captured frame by frame as you scroll.
                 </p>
               </ChapterPanel>
@@ -420,21 +430,21 @@ export default function ScrollFrameHero({ products, onOpenProduct, onGoShop }: P
                 <GoldRule progress={smoothProgress} enter={0.54} exit={0.84} />
                 {trophyProduct && (
                   <>
-                    <p className="mb-3 text-[10px] tracking-[0.28em] text-[#c9a66b] uppercase">
+                    <p className="mb-3 text-[10px] tracking-[0.28em] text-[var(--site-gold)] uppercase">
                       Featured trophy
                     </p>
-                    <h3 className="font-display text-2xl font-medium leading-snug text-[#f4efe6] sm:text-3xl xl:text-4xl">
+                    <h3 className="font-display text-2xl font-medium leading-snug text-[var(--site-ink)] sm:text-3xl xl:text-4xl">
                       {trophyProduct.name}
                     </h3>
-                    <p className="mt-3 text-sm text-[#f4efe6]/55">
+                    <p className="mt-3 text-[13px] text-[var(--site-ink)]/80 sm:text-sm">
                       {format(trophyProduct.price)}
-                      <span className="mx-2 text-[#c9a66b]/40">·</span>
+                      <span className="mx-2 text-[var(--site-gold)]/70">·</span>
                       17.5cm gold metallic
                     </p>
                     <button
                       type="button"
                       onClick={() => onOpenProduct(trophyProduct)}
-                      className="pointer-events-auto mt-6 w-fit rounded-full border border-[#c9a66b]/45 bg-[#0a1a16]/50 px-6 py-2.5 text-[11px] font-semibold tracking-[0.2em] text-[#c9a66b] uppercase backdrop-blur-sm transition hover:border-[#c9a66b] hover:bg-[#1f6b55]/25"
+                      className="pointer-events-auto mt-6 w-fit rounded-full border border-[var(--site-gold)]/45 bg-[var(--site-surface)]/50 px-6 py-2.5 text-[11px] font-semibold tracking-[0.2em] text-[var(--site-gold)] uppercase backdrop-blur-sm transition hover:border-[var(--site-gold)] hover:bg-[var(--site-accent)]/25"
                     >
                       View product
                     </button>
@@ -444,20 +454,20 @@ export default function ScrollFrameHero({ products, onOpenProduct, onGoShop }: P
 
               <ChapterPanel progress={smoothProgress} enter={0.78} hold={0.9} exit={1.05}>
                 <GoldRule progress={smoothProgress} enter={0.8} exit={1.05} />
-                <p className="mb-3 text-[10px] tracking-[0.3em] text-[#f4efe6]/40 uppercase">
+                <p className="mb-3 text-[10px] font-semibold tracking-[0.3em] text-[var(--site-gold)] uppercase">
                   The atelier awaits
                 </p>
-                <h2 className="font-display text-[2.1rem] font-medium text-[#f4efe6] sm:text-4xl">
+                <h2 className="font-display text-[2.1rem] font-medium text-[var(--site-ink)] sm:text-4xl">
                   Shop the
-                  <span className="block text-[#c9a66b]">collection</span>
+                  <span className="block text-[var(--site-gold)]">collection</span>
                 </h2>
-                <p className="mt-4 max-w-sm text-sm text-[#f4efe6]/55">
+                <p className="mt-4 max-w-sm text-[13px] leading-relaxed text-[var(--site-ink)]/80 sm:text-sm">
                   Egyptian cotton, polo wear & athletic essentials — and trophies built to shine.
                 </p>
                 <button
                   type="button"
                   onClick={onGoShop}
-                  className="pointer-events-auto group relative mt-7 w-fit overflow-hidden rounded-full bg-gradient-to-r from-[#1f6b55] to-[#2a8a6e] px-8 py-3.5 text-[11px] font-bold tracking-[0.22em] text-[#f4efe6] uppercase shadow-[0_0_40px_rgba(31,107,85,0.4)] transition hover:shadow-[0_0_60px_rgba(201,166,107,0.25)]"
+                  className="pointer-events-auto group relative mt-7 w-fit overflow-hidden rounded-full site-cta-btn px-8 py-3.5 text-[11px] font-bold tracking-[0.22em] text-[var(--site-ink)] uppercase shadow-lg transition "
                 >
                   <span className="relative z-10">Enter the store</span>
                   <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition duration-700 group-hover:translate-x-full" />
@@ -466,10 +476,10 @@ export default function ScrollFrameHero({ products, onOpenProduct, onGoShop }: P
             </div>
 
             <motion.div
-              className="mt-8 hidden items-center gap-3 text-[10px] tracking-[0.28em] text-[#c9a66b]/55 uppercase lg:flex"
+              className="mt-8 hidden items-center gap-3 text-[10px] tracking-[0.28em] text-[var(--site-gold)]/55 uppercase lg:flex"
               style={{ opacity: scrollCueOpacity }}
             >
-              <span className="inline-block h-8 w-px bg-gradient-to-b from-[#c9a66b] to-transparent" />
+              <span className="inline-block h-8 w-px bg-gradient-to-b from-[var(--site-gold)] to-transparent" />
               Scroll to reveal
             </motion.div>
           </aside>
@@ -477,15 +487,15 @@ export default function ScrollFrameHero({ products, onOpenProduct, onGoShop }: P
           {/* ── RIGHT: trophy on same theme stage ── */}
           <div className="relative h-[58%] w-full flex-1 lg:h-full lg:w-[56%]">
             {/* Ambient gold pool behind trophy */}
-            <div className="pointer-events-none absolute left-1/2 top-1/2 h-[70%] w-[70%] -translate-x-1/2 -translate-y-[46%] rounded-full bg-[radial-gradient(ellipse_at_center,rgba(201,166,107,0.12),transparent_68%)]" />
+            <div className="pointer-events-none absolute left-1/2 top-1/2 h-[70%] w-[70%] -translate-x-1/2 -translate-y-[46%] rounded-full bg-[radial-gradient(ellipse_at_center,var(--site-hero-glow-b),transparent_68%)]" />
 
             <div
               ref={canvasWrapRef}
-              className="absolute inset-0 overflow-hidden bg-[#050d0b]"
+              className="absolute inset-0 overflow-hidden bg-[var(--site-bg)]"
             >
               <canvas
                 ref={canvasRef}
-                className="absolute inset-0 h-full w-full bg-[#050d0b]"
+                className="absolute inset-0 h-full w-full bg-[var(--site-bg)]"
                 style={{
                   // Soft oval reveal — kills the hard grey rectangle
                   WebkitMaskImage:
@@ -498,11 +508,11 @@ export default function ScrollFrameHero({ products, onOpenProduct, onGoShop }: P
             </div>
 
             {loading && (
-              <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#050d0b]/90">
+              <div className="absolute inset-0 z-30 flex items-center justify-center bg-[var(--site-bg)]/90">
                 <motion.div
                   animate={{ opacity: [0.5, 1, 0.5] }}
                   transition={{ duration: 1.6, repeat: Infinity }}
-                  className="rounded-full border border-[#c9a66b]/30 bg-[#0a1a16]/80 px-5 py-2.5 text-[11px] tracking-[0.25em] uppercase text-[#c9a66b] backdrop-blur-md"
+                  className="rounded-full border border-[var(--site-gold)]/30 bg-[var(--site-surface)]/80 px-5 py-2.5 text-[11px] tracking-[0.25em] uppercase text-[var(--site-gold)] backdrop-blur-md"
                 >
                   Loading frames…
                 </motion.div>
@@ -510,11 +520,11 @@ export default function ScrollFrameHero({ products, onOpenProduct, onGoShop }: P
             )}
 
             <div className="pointer-events-none absolute bottom-5 right-5 z-20 hidden items-end gap-2 text-right lg:flex">
-              <span className="font-mono text-[10px] tracking-[0.2em] text-[#f4efe6]/35">
+              <span className="font-mono text-[10px] tracking-[0.2em] text-[var(--site-ink)]/35">
                 FRAME{' '}
                 {String(Math.round((progressPct / 100) * (FRAME_COUNT - 1)) + 1).padStart(3, '0')}
               </span>
-              <span className="text-[10px] text-[#c9a66b]/40">/ {FRAME_COUNT}</span>
+              <span className="text-[10px] text-[var(--site-gold)]/40">/ {FRAME_COUNT}</span>
             </div>
           </div>
         </div>

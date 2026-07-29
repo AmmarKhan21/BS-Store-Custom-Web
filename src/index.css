@@ -152,3 +152,316 @@ h1, h2, h3, h4, h5, h6, .font-display {
     animation: none !important;
   }
 }
+
+/* ═══════════════════════════════════════════
+   Full homepage themes (5 variants)
+   Applied via [data-site-theme] on the app root
+   ═══════════════════════════════════════════ */
+
+@keyframes store-sheen {
+  0% { transform: translateX(-120%) skewX(-12deg); }
+  100% { transform: translateX(220%) skewX(-12deg); }
+}
+
+@keyframes theme-flash {
+  0% { opacity: 0.55; }
+  100% { opacity: 0; }
+}
+
+[data-site-theme] {
+  --site-radius: 1.25rem;
+  color: var(--site-ink);
+  background: var(--site-bg);
+  transition: background 0.5s ease, color 0.4s ease;
+}
+
+/* Alias store tokens → site tokens so catalog/cards inherit */
+[data-site-theme] {
+  --store-shell: var(--site-bg);
+  --store-bg: var(--site-surface-soft);
+  --store-surface: var(--site-surface);
+  --store-surface-2: var(--site-surface-2);
+  --store-ink: var(--site-ink);
+  --store-muted: var(--site-muted);
+  --store-accent: var(--site-gold);
+  --store-accent-2: var(--site-accent);
+  --store-accent-ink: var(--site-bg);
+  --store-border: var(--site-border);
+  --store-pill: var(--site-pill);
+  --store-pill-active-bg: var(--site-pill-active-bg);
+  --store-pill-active-fg: var(--site-pill-active-fg);
+  --store-img-bg: var(--site-img-bg);
+  --store-shadow: var(--site-shadow);
+  --store-card-shadow: var(--site-card-shadow);
+  --store-glow: var(--site-glow);
+  --store-radius: var(--site-radius);
+}
+
+/* 1 · Emerald Glory */
+[data-site-theme='emerald'] {
+  --site-bg: #050d0b;
+  --site-surface: #101816;
+  --site-surface-2: #16201c;
+  --site-surface-soft: #080f0d;
+  --site-ink: #f2ebe0;
+  --site-muted: #8f978f;
+  --site-gold: #c9a66b;
+  --site-gold-soft: #e2c08a;
+  --site-accent: #1f6b55;
+  --site-border: rgba(201, 166, 107, 0.16);
+  --site-pill: rgba(201, 166, 107, 0.1);
+  --site-pill-active-bg: #c9a66b;
+  --site-pill-active-fg: #050d0b;
+  --site-img-bg: #0c1412;
+  --site-nav-solid: rgba(5, 13, 11, 0.92);
+  --site-hero-glow-a: rgba(31, 107, 85, 0.22);
+  --site-hero-glow-b: rgba(201, 166, 107, 0.12);
+  --site-shadow: 0 24px 60px -28px rgba(0, 0, 0, 0.65);
+  --site-card-shadow: 0 16px 40px -20px rgba(0, 0, 0, 0.55);
+  --site-glow: radial-gradient(ellipse 80% 50% at 70% 0%, rgba(31, 107, 85, 0.22), transparent 55%),
+    radial-gradient(ellipse 60% 40% at 20% 100%, rgba(201, 166, 107, 0.1), transparent 50%);
+  --site-progress: linear-gradient(90deg, #1f6b55, #c9a66b, #e2c08a);
+  --site-cta: linear-gradient(135deg, #1f6b55, #2a8a6e);
+}
+
+/* 2 · Obsidian Royal */
+[data-site-theme='obsidian'] {
+  --site-bg: #06080f;
+  --site-surface: #10141f;
+  --site-surface-2: #171c2a;
+  --site-surface-soft: #090b14;
+  --site-ink: #eef1f7;
+  --site-muted: #8b93a8;
+  --site-gold: #d4af37;
+  --site-gold-soft: #f0d78c;
+  --site-accent: #3d6eb5;
+  --site-border: rgba(212, 175, 55, 0.18);
+  --site-pill: rgba(61, 110, 181, 0.14);
+  --site-pill-active-bg: #d4af37;
+  --site-pill-active-fg: #06080f;
+  --site-img-bg: #0c1018;
+  --site-nav-solid: rgba(6, 8, 15, 0.92);
+  --site-hero-glow-a: rgba(61, 110, 181, 0.28);
+  --site-hero-glow-b: rgba(212, 175, 55, 0.14);
+  --site-shadow: 0 24px 60px -28px rgba(0, 0, 0, 0.7);
+  --site-card-shadow: 0 16px 40px -18px rgba(61, 110, 181, 0.2);
+  --site-glow: radial-gradient(ellipse 75% 50% at 80% 0%, rgba(61, 110, 181, 0.28), transparent 55%),
+    radial-gradient(ellipse 55% 40% at 15% 100%, rgba(212, 175, 55, 0.12), transparent 50%);
+  --site-progress: linear-gradient(90deg, #3d6eb5, #d4af37, #f0d78c);
+  --site-cta: linear-gradient(135deg, #2a4a7a, #3d6eb5);
+}
+
+/* 3 · Champagne Atelier */
+[data-site-theme='champagne'] {
+  --site-bg: #1a1510;
+  --site-surface: #241e17;
+  --site-surface-2: #2e261d;
+  --site-surface-soft: #14110d;
+  --site-ink: #f7f0e6;
+  --site-muted: #a89a88;
+  --site-gold: #c4a574;
+  --site-gold-soft: #e2c9a0;
+  --site-accent: #a67c2d;
+  --site-border: rgba(196, 165, 116, 0.2);
+  --site-pill: rgba(196, 165, 116, 0.12);
+  --site-pill-active-bg: #c4a574;
+  --site-pill-active-fg: #1a1510;
+  --site-img-bg: #1c1712;
+  --site-nav-solid: rgba(26, 21, 16, 0.92);
+  --site-hero-glow-a: rgba(166, 124, 45, 0.22);
+  --site-hero-glow-b: rgba(226, 201, 160, 0.14);
+  --site-shadow: 0 24px 60px -28px rgba(0, 0, 0, 0.6);
+  --site-card-shadow: 0 16px 40px -20px rgba(0, 0, 0, 0.5);
+  --site-glow: radial-gradient(ellipse 70% 50% at 75% 5%, rgba(196, 165, 116, 0.2), transparent 55%),
+    radial-gradient(ellipse 50% 40% at 10% 90%, rgba(166, 124, 45, 0.12), transparent 50%);
+  --site-progress: linear-gradient(90deg, #8b6914, #c4a574, #e2c9a0);
+  --site-cta: linear-gradient(135deg, #8b6914, #c4a574);
+}
+
+/* 4 · Arctic Steel */
+[data-site-theme='arctic'] {
+  --site-bg: #0a1014;
+  --site-surface: #121a20;
+  --site-surface-2: #1a242c;
+  --site-surface-soft: #0c1216;
+  --site-ink: #e8eef2;
+  --site-muted: #8b97a5;
+  --site-gold: #a8b4c0;
+  --site-gold-soft: #d5dde4;
+  --site-accent: #4a9b8c;
+  --site-border: rgba(74, 155, 140, 0.22);
+  --site-pill: rgba(74, 155, 140, 0.12);
+  --site-pill-active-bg: #4a9b8c;
+  --site-pill-active-fg: #0a1014;
+  --site-img-bg: #0e151a;
+  --site-nav-solid: rgba(10, 16, 20, 0.92);
+  --site-hero-glow-a: rgba(74, 155, 140, 0.28);
+  --site-hero-glow-b: rgba(168, 180, 192, 0.12);
+  --site-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.65);
+  --site-card-shadow: 0 18px 44px -18px rgba(74, 155, 140, 0.22);
+  --site-glow: radial-gradient(ellipse 70% 55% at 85% 10%, rgba(74, 155, 140, 0.28), transparent 55%),
+    radial-gradient(ellipse 50% 40% at 10% 90%, rgba(168, 180, 192, 0.1), transparent 50%);
+  --site-progress: linear-gradient(90deg, #4a9b8c, #a8b4c0, #d5dde4);
+  --site-cta: linear-gradient(135deg, #2f7a6e, #4a9b8c);
+}
+
+/* 5 · Crimson Arena */
+[data-site-theme='crimson'] {
+  --site-bg: #0c0808;
+  --site-surface: #161010;
+  --site-surface-2: #1f1616;
+  --site-surface-soft: #100a0a;
+  --site-ink: #f5ebe3;
+  --site-muted: #a8928a;
+  --site-gold: #d4a84b;
+  --site-gold-soft: #e8c878;
+  --site-accent: #9b2c2c;
+  --site-border: rgba(212, 168, 75, 0.18);
+  --site-pill: rgba(155, 44, 44, 0.16);
+  --site-pill-active-bg: #d4a84b;
+  --site-pill-active-fg: #0c0808;
+  --site-img-bg: #120c0c;
+  --site-nav-solid: rgba(12, 8, 8, 0.92);
+  --site-hero-glow-a: rgba(155, 44, 44, 0.28);
+  --site-hero-glow-b: rgba(212, 168, 75, 0.14);
+  --site-shadow: 0 24px 60px -28px rgba(0, 0, 0, 0.7);
+  --site-card-shadow: 0 16px 40px -18px rgba(155, 44, 44, 0.25);
+  --site-glow: radial-gradient(ellipse 75% 50% at 80% 0%, rgba(155, 44, 44, 0.28), transparent 55%),
+    radial-gradient(ellipse 55% 40% at 15% 100%, rgba(212, 168, 75, 0.12), transparent 50%);
+  --site-progress: linear-gradient(90deg, #9b2c2c, #d4a84b, #e8c878);
+  --site-cta: linear-gradient(135deg, #7a1f1f, #9b2c2c);
+}
+
+/* Theme flash overlay when switching */
+.site-theme-flash {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: radial-gradient(circle at 50% 40%, var(--site-gold), transparent 60%);
+  animation: theme-flash 0.7s ease forwards;
+}
+
+/* Store surfaces */
+.store-theme,
+[data-site-theme] .store-shell {
+  color: var(--store-ink);
+}
+
+[data-site-theme] .store-panel {
+  position: relative;
+  overflow: hidden;
+  background: var(--store-bg);
+  color: var(--store-ink);
+  box-shadow: var(--store-shadow);
+}
+
+[data-site-theme] .store-panel::before {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background: var(--store-glow);
+}
+
+[data-site-theme] .store-card {
+  position: relative;
+  overflow: hidden;
+  background: var(--store-surface);
+  border: 1px solid var(--store-border);
+  box-shadow: var(--store-card-shadow);
+  border-radius: var(--store-radius);
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s ease, border-color 0.3s ease;
+}
+
+[data-site-theme] .store-card:hover {
+  transform: translateY(-6px);
+  border-color: color-mix(in srgb, var(--store-accent) 45%, transparent);
+}
+
+[data-site-theme] .store-card::after {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, 0.12) 50%, transparent 60%);
+  opacity: 0;
+}
+
+[data-site-theme] .store-card:hover::after {
+  opacity: 1;
+  animation: store-sheen 0.9s ease;
+}
+
+[data-site-theme] .store-aside {
+  background: var(--store-surface);
+  border: 1px solid var(--store-border);
+  box-shadow: var(--store-card-shadow);
+}
+
+[data-site-theme] .store-pill {
+  background: var(--store-pill);
+  border: 1px solid var(--store-border);
+  color: var(--store-muted);
+}
+
+[data-site-theme] .store-pill-active {
+  background: var(--store-pill-active-bg);
+  border-color: transparent;
+  color: var(--store-pill-active-fg);
+  box-shadow: 0 10px 28px -12px color-mix(in srgb, var(--store-pill-active-bg) 55%, transparent);
+}
+
+[data-site-theme] .store-btn-primary {
+  background: var(--site-cta);
+  color: var(--site-ink);
+}
+
+[data-site-theme] .store-btn-accent {
+  background: var(--store-accent);
+  color: var(--store-accent-ink);
+}
+
+[data-site-theme] .store-input {
+  background: var(--store-surface-2);
+  border: 1px solid var(--store-border);
+  color: var(--store-ink);
+}
+
+[data-site-theme] .store-input:focus {
+  border-color: color-mix(in srgb, var(--store-accent) 55%, transparent);
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--store-accent) 22%, transparent);
+}
+
+[data-site-theme] .store-chip {
+  background: var(--store-surface);
+  border: 1px solid var(--store-border);
+  color: var(--store-ink);
+}
+
+/* Nav / hero helpers */
+[data-site-theme] .site-nav-solid {
+  background: var(--site-nav-solid);
+  border-bottom-color: var(--site-border);
+}
+
+[data-site-theme] .site-gold { color: var(--site-gold); }
+[data-site-theme] .site-ink { color: var(--site-ink); }
+[data-site-theme] .site-muted { color: var(--site-muted); }
+[data-site-theme] .site-bg { background: var(--site-bg); }
+[data-site-theme] .site-surface { background: var(--site-surface); }
+[data-site-theme] .site-border { border-color: var(--site-border); }
+[data-site-theme] .site-progress-bar {
+  background: var(--site-progress);
+}
+[data-site-theme] .site-cta-btn {
+  background: var(--site-cta);
+  color: var(--site-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-site-theme] .store-card:hover::after { animation: none; }
+  [data-site-theme] .store-card:hover { transform: none; }
+  .site-theme-flash { animation: none; display: none; }
+}

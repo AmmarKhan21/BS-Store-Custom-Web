@@ -12,7 +12,9 @@ import ProductModal from './components/ProductModal';
 import CartDrawer from './components/CartDrawer';
 import CheckoutWizard from './components/CheckoutWizard';
 import AppLoader from './components/AppLoader';
+import SiteThemeSwitcher from './components/SiteThemeSwitcher';
 import { Sparkles } from 'lucide-react';
+import { loadSiteTheme, saveSiteTheme, SiteThemeId } from './theme/siteThemes';
 
 export default function StoreApp() {
   const { currency, format, country, loading: currencyLoading } = useCurrency();
@@ -97,6 +99,16 @@ export default function StoreApp() {
   const [showFeaturedOnly, setShowFeaturedOnly] = useState<boolean>(false);
   const [minRating, setMinRating] = useState<number>(0);
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState<boolean>(false);
+  const [siteTheme, setSiteTheme] = useState<SiteThemeId>(() => loadSiteTheme());
+  const [themeFlash, setThemeFlash] = useState(false);
+
+  const handleSiteThemeChange = (id: SiteThemeId) => {
+    setSiteTheme(id);
+    saveSiteTheme(id);
+    setThemeFlash(true);
+    window.setTimeout(() => setThemeFlash(false), 700);
+  };
+
 
   // Interactive Overlays
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -318,15 +330,25 @@ export default function StoreApp() {
         variant="store"
         message="Loading products & prices…"
       />
-    <div className="min-h-screen bg-[#050d0b] font-sans selection:bg-[#c9a66b]/35 flex flex-col justify-between">
-      
+    <div
+      data-site-theme={siteTheme}
+      className="flex min-h-screen flex-col justify-between bg-[var(--site-bg)] font-sans text-[var(--site-ink)] selection:bg-[var(--site-gold)]/35"
+    >
+      {themeFlash && <div className="site-theme-flash" aria-hidden />}
+
       {/* Toast Alert Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-[100] px-4 py-3 bg-[#0e3d34] border border-[#1f6b55] text-[#f4efe6] text-xs font-semibold rounded-xl shadow-2xl flex items-center gap-2.5 animate-bounce">
-          <Sparkles size={14} className="text-[#e2c08a]" />
+        <div className="fixed right-6 bottom-6 z-[100] flex animate-bounce items-center gap-2.5 rounded-xl border border-[var(--site-border)] bg-[var(--site-surface)] px-4 py-3 text-xs font-semibold text-[var(--site-ink)] shadow-2xl">
+          <Sparkles size={14} className="text-[var(--site-gold)]" />
           <span>{toastMessage}</span>
         </div>
       )}
+
+      <SiteThemeSwitcher
+        active={siteTheme}
+        onChange={handleSiteThemeChange}
+        hidden={Boolean(selectedProduct) || isCartOpen || isCheckoutOpen}
+      />
 
       <StoreNavbar
         customerName={customerName}
@@ -384,29 +406,29 @@ export default function StoreApp() {
       />
 
       {/* FOOTER SECTION */}
-      <footer className="mt-0 border-t border-white/10 bg-[#050d0b] px-4 py-12 text-xs font-sans text-[#f4efe6]/55 md:px-8">
+      <footer className="mt-0 border-t border-[var(--site-border)] bg-[var(--site-bg)] px-4 py-12 text-xs font-sans text-[var(--site-muted)] md:px-8">
         <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 md:grid-cols-3">
           <div className="space-y-4">
             <div className="flex items-center gap-2.5">
-              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#c9a66b] font-display text-base font-bold text-[#0a1a16]">
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--site-gold)] font-display text-base font-bold text-[var(--site-bg)]">
                 B
               </span>
               <div>
-                <h3 className="font-display text-sm font-semibold tracking-tight text-[#f4efe6]">
+                <h3 className="font-display text-sm font-semibold tracking-tight text-[var(--site-ink)]">
                   Bismillah Store
                 </h3>
-                <p className="text-[9px] font-bold tracking-[0.2em] text-[#c9a66b] uppercase">
+                <p className="text-[9px] font-bold tracking-[0.2em] text-[var(--site-gold)] uppercase">
                   Cotton & Sports Hub
                 </p>
               </div>
             </div>
-            <p className="max-w-sm text-[11px] leading-relaxed text-[#f4efe6]/45">
+            <p className="max-w-sm text-[11px] leading-relaxed text-[var(--site-muted)]">
               Premium Egyptian cotton, athletic wear, and championship trophies — crafted for everyday elegance and victory.
             </p>
           </div>
 
           <div className="space-y-3">
-            <h4 className="text-[10px] font-bold tracking-[0.22em] text-[#c9a66b] uppercase">
+            <h4 className="text-[10px] font-bold tracking-[0.22em] text-[var(--site-gold)] uppercase">
               Collections
             </h4>
             <ul className="space-y-2 text-[11px]">
@@ -418,7 +440,7 @@ export default function StoreApp() {
                       setActiveCategory(cat);
                       document.getElementById('store-grid-section')?.scrollIntoView({ behavior: 'smooth' });
                     }}
-                    className="text-left text-[#f4efe6]/55 transition hover:text-[#e2c08a]"
+                    className="text-left text-[var(--site-muted)] transition hover:text-[var(--site-gold-soft)]"
                   >
                     {cat}
                   </button>
@@ -428,22 +450,22 @@ export default function StoreApp() {
           </div>
 
           <div className="space-y-3">
-            <h4 className="text-[10px] font-bold tracking-[0.22em] text-[#c9a66b] uppercase">
+            <h4 className="text-[10px] font-bold tracking-[0.22em] text-[var(--site-gold)] uppercase">
               Support
             </h4>
-            <ul className="space-y-2 text-[11px] text-[#f4efe6]/55">
+            <ul className="space-y-2 text-[11px] text-[var(--site-muted)]">
               <li>
-                <Link to="/contact" className="transition hover:text-[#e2c08a]">
+                <Link to="/contact" className="transition hover:text-[var(--site-gold-soft)]">
                   Contact Us
                 </Link>
               </li>
               <li>
-                <Link to="/privacy" className="transition hover:text-[#e2c08a]">
+                <Link to="/privacy" className="transition hover:text-[var(--site-gold-soft)]">
                   Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link to="/terms" className="transition hover:text-[#e2c08a]">
+                <Link to="/terms" className="transition hover:text-[var(--site-gold-soft)]">
                   Terms & Conditions
                 </Link>
               </li>
@@ -454,7 +476,7 @@ export default function StoreApp() {
           </div>
         </div>
 
-        <div className="mx-auto mt-10 max-w-7xl border-t border-white/10 pt-6 text-center text-[10px] text-[#f4efe6]/35">
+        <div className="mx-auto mt-10 max-w-7xl border-t border-[var(--site-border)] pt-6 text-center text-[10px] text-[var(--site-muted)]/70">
           <p>© {new Date().getFullYear()} Bismillah Cotton and Sports Hub. All rights reserved.</p>
         </div>
       </footer>
