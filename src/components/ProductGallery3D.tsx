@@ -72,11 +72,9 @@ function ProductBox({
       onPointerOver={(e: ThreeEvent<PointerEvent>) => {
         e.stopPropagation();
         setHovered(true);
-        document.body.style.cursor = 'pointer';
       }}
       onPointerOut={() => {
         setHovered(false);
-        document.body.style.cursor = 'auto';
       }}
     >
       <boxGeometry args={[1.2, 1.6, 0.25]} />
@@ -129,11 +127,9 @@ function PhotoCard({
       onPointerOver={(e: ThreeEvent<PointerEvent>) => {
         e.stopPropagation();
         setHovered(true);
-        document.body.style.cursor = 'pointer';
       }}
       onPointerOut={() => {
         setHovered(false);
-        document.body.style.cursor = 'auto';
       }}
     >
       {/* Frame */}

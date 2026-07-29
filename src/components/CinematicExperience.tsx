@@ -448,6 +448,7 @@ function CollectionScene({
       <motion.div
         style={{ opacity: galleryOpacity, y: galleryY, scale: galleryScale }}
         className="relative z-10 mx-auto mt-6 h-[38vh] w-full max-w-5xl px-4 sm:h-[46vh]"
+        data-cursor="drag"
       >
         <Suspense
           fallback={

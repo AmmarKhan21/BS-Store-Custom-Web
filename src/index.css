@@ -142,6 +142,78 @@ h1, h2, h3, h4, h5, h6, .font-display {
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
+/* ── Cinematic custom cursor (desktop / fine pointer) ── */
+html.cinematic-cursor-on,
+html.cinematic-cursor-on * {
+  cursor: none !important;
+}
+
+.cinematic-cursor {
+  transition: opacity 0.2s ease;
+}
+
+.cinematic-cursor__spark {
+  width: 22px;
+  height: 22px;
+  transition: width 0.25s ease, height 0.25s ease, opacity 0.25s ease;
+}
+
+.cinematic-cursor__spark.is-hover {
+  width: 14px;
+  height: 14px;
+  opacity: 0.85;
+}
+
+.cinematic-cursor__ring {
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(201, 166, 107, 0.55);
+  border-radius: 9999px;
+  box-shadow: 0 0 18px rgba(201, 166, 107, 0.18);
+  transition:
+    width 0.3s ease,
+    height 0.3s ease,
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.cinematic-cursor__ring.is-hover {
+  width: 72px;
+  height: 72px;
+  background-color: rgba(201, 166, 107, 0.1);
+  border-color: rgba(226, 192, 138, 0.95);
+  box-shadow: 0 0 28px rgba(201, 166, 107, 0.28);
+  backdrop-filter: blur(3px);
+}
+
+.cinematic-cursor__ring.is-drag {
+  width: 88px;
+  height: 88px;
+  border-color: rgba(226, 192, 138, 1);
+  background-color: rgba(31, 107, 85, 0.18);
+}
+
+.cinematic-cursor__label {
+  padding: 0.35rem 0.55rem;
+  border: 1px solid rgba(201, 166, 107, 0.65);
+  border-radius: 9999px;
+  background: rgba(5, 13, 11, 0.82);
+  color: #e2c08a;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translate3d(-100px, -100px, 0);
+  transition: opacity 0.2s ease;
+  backdrop-filter: blur(8px);
+}
+
+.cinematic-cursor__label.is-visible {
+  opacity: 1;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .mg-orb-a,
   .mg-orb-b,

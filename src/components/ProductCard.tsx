@@ -67,7 +67,7 @@ export default function ProductCard({
       }}
       onMouseMove={handleMove}
       onMouseLeave={handleLeave}
-      className="group relative flex flex-col overflow-hidden rounded-2xl border border-[#1a332e]/12 bg-[#faf8f4] shadow-[0_8px_30px_-12px_rgba(6,22,20,0.25)] transition-shadow duration-300 hover:shadow-[0_20px_50px_-18px_rgba(6,22,20,0.4)]"
+      className="product-card group relative flex flex-col overflow-hidden rounded-2xl border border-[#1a332e]/12 bg-[#faf8f4] shadow-[0_8px_30px_-12px_rgba(6,22,20,0.25)] transition-shadow duration-300 hover:shadow-[0_20px_50px_-18px_rgba(6,22,20,0.4)]"
       id={`product-card-${product.id}`}
     >
       <div className="pointer-events-none absolute left-3 top-3 z-[2] flex flex-col gap-1.5">

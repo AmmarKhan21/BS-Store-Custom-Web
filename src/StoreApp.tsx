@@ -6,6 +6,7 @@ import { customerFetch, getCustomerProfile } from './lib/customerAuth';
 import { useCurrency } from './context/CurrencyContext';
 import { usePageMeta } from './hooks/usePageMeta';
 import CinematicExperience from './components/CinematicExperience';
+import CinematicCursor from './components/CinematicCursor';
 import ProductCard from './components/ProductCard';
 import ProductModal from './components/ProductModal';
 import CartDrawer from './components/CartDrawer';
@@ -330,6 +331,7 @@ export default function StoreApp() {
         message="Loading products & prices…"
       />
     <div className="min-h-screen bg-[#050d0b] font-sans selection:bg-[#c9a66b]/35 flex flex-col justify-between">
+      <CinematicCursor />
       
       {/* Toast Alert Notification */}
       {toastMessage && (
