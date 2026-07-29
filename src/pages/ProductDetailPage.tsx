@@ -3,13 +3,13 @@ import { Link, useParams } from 'react-router-dom';
 import { Product, CartItem } from '../types';
 import { useCurrency } from '../context/CurrencyContext';
 import { ShoppingCart, ArrowLeft, Plus, Minus } from 'lucide-react';
+import ProductImageGallery from '../components/ProductImageGallery';
 
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { format } = useCurrency();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedImage, setSelectedImage] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
   const [quantity, setQuantity] = useState(1);
@@ -26,7 +26,6 @@ export default function ProductDetailPage() {
         if (data.error) setProduct(null);
         else {
           setProduct(data);
-          setSelectedImage(data.images?.[0] || '');
           setSelectedSize(data.sizes?.[0] || '');
           setSelectedColor(data.colors?.[0] || '');
         }
@@ -100,26 +99,7 @@ export default function ProductDetailPage() {
       <main className="max-w-5xl mx-auto px-4 md:px-8 py-8">
         <div className="site-panel rounded-2xl overflow-hidden flex flex-col md:flex-row">
           <div className="md:w-1/2 p-6 bg-[var(--site-surface-2)]">
-            <div className="aspect-square rounded-xl overflow-hidden bg-[var(--site-surface)] border border-[var(--site-border)]">
-              <img src={selectedImage} alt={product.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-            </div>
-            {product.images.length > 1 && (
-              <div className="flex gap-2 mt-4 overflow-x-auto">
-                {product.images.map((img, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setSelectedImage(img)}
-                    className={`w-16 h-16 rounded-md overflow-hidden border shrink-0 ${
-                      selectedImage === img
-                        ? 'border-[var(--site-accent)] ring-2 ring-[var(--site-accent)]/20'
-                        : 'border-[var(--site-border)]'
-                    }`}
-                  >
-                    <img src={img} alt="" className="w-full h-full object-cover" />
-                  </button>
-                ))}
-              </div>
-            )}
+            <ProductImageGallery images={product.images} alt={product.name} />
           </div>
           <div className="md:w-1/2 p-6 md:p-8">
             <span className="text-[10px] uppercase font-bold text-[var(--site-gold)] tracking-widest">{product.category}</span>

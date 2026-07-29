@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Product, Review } from '../types';
 import { Star, X, ShoppingCart, ShieldCheck, Truck, RotateCcw, Plus, Minus, Check } from 'lucide-react';
 import { useCurrency } from '../context/CurrencyContext';
+import ProductImageGallery from './ProductImageGallery';
 
 interface ProductModalProps {
   product: Product;
@@ -12,7 +13,6 @@ interface ProductModalProps {
 
 export default function ProductModal({ product, onClose, onAddToCart, onAddReview }: ProductModalProps) {
   const { format } = useCurrency();
-  const [selectedImage, setSelectedImage] = useState(product.images[0]);
   const [selectedSize, setSelectedSize] = useState(product.sizes?.[0] || '');
   const [selectedColor, setSelectedColor] = useState(product.colors?.[0] || '');
   const [quantity, setQuantity] = useState(1);
@@ -98,33 +98,11 @@ export default function ProductModal({ product, onClose, onAddToCart, onAddRevie
           </button>
 
           <div className="w-full shrink-0 border-b border-[var(--site-border)] bg-[var(--site-surface-2)] p-4 sm:p-6 md:w-1/2 md:border-r md:border-b-0">
-            <div className="relative mx-auto aspect-square max-h-[36svh] w-full overflow-hidden rounded-xl border border-[var(--site-border)] bg-[var(--site-surface)] md:max-h-none">
-              <img
-                src={selectedImage}
-                alt={product.name}
-                className="h-full w-full object-cover"
-                referrerPolicy="no-referrer"
-              />
-            </div>
-
-            {product.images.length > 1 && (
-              <div className="mt-3 flex gap-2 overflow-x-auto pb-1" id="thumbnails-tray">
-                {product.images.map((img, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => setSelectedImage(img)}
-                    className={`h-14 w-14 shrink-0 overflow-hidden rounded-md border bg-[var(--site-surface)] transition-all sm:h-16 sm:w-16 ${
-                      selectedImage === img
-                        ? 'border-[var(--site-accent)] ring-2 ring-[var(--site-accent)]/20'
-                        : 'border-[var(--site-border)]'
-                    }`}
-                  >
-                    <img src={img} alt={`Thumbnail ${idx}`} className="h-full w-full object-cover" />
-                  </button>
-                ))}
-              </div>
-            )}
+            <ProductImageGallery
+              images={product.images}
+              alt={product.name}
+              previewClassName="max-h-[36svh] md:max-h-none"
+            />
 
             <div className="mt-4 hidden space-y-2.5 border-t border-[var(--site-border)] pt-4 text-xs text-[var(--site-muted)] md:block">
               <div className="flex items-center gap-2.5">
